@@ -1,0 +1,146 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "delete": "Delete",
+    "edit": "Edit",
+    "save": "Save",
+    "create": "Create",
+    "copy": "Copy",
+    "copied": "Copied!",
+    "back": "Back"
+  },
+  "nav": {
+    "home": "Home",
+    "dashboard": "Dashboard",
+    "applications": "Applications",
+    "login": "Login",
+    "register": "Register",
+    "logout": "Logout"
+  },
+  "home": {
+    "title": "Open Source OAuth Server",
+    "subtitle": "Deploy a secure OAuth2.0/OIDC authentication server on Cloudflare",
+    "getStarted": "Get Started",
+    "viewOnGitHub": "View on GitHub",
+    "features": {
+      "oauth": {
+        "title": "OAuth2/OIDC",
+        "description": "Full OAuth2.0 and OpenID Connect support with multiple grant types"
+      },
+      "cloudflare": {
+        "title": "Cloudflare Powered",
+        "description": "Deployed on Cloudflare Workers for global edge performance"
+      },
+      "security": {
+        "title": "Enterprise Security",
+        "description": "Built-in DDoS protection, WAF, and automatic SSL certificates"
+      }
+    }
+  },
+  "auth": {
+    "login": {
+      "title": "Login",
+      "email": "Email",
+      "password": "Password",
+      "submit": "Sign In",
+      "noAccount": "Don't have an account?",
+      "signUp": "Sign up"
+    },
+    "register": {
+      "title": "Create Account",
+      "email": "Email",
+      "password": "Password",
+      "confirmPassword": "Confirm Password",
+      "submit": "Create Account",
+      "hasAccount": "Already have an account?",
+      "signIn": "Sign in",
+      "passwordMismatch": "Passwords do not match"
+    }
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "stats": {
+      "totalApps": "Total Applications",
+      "apiCalls": "API Calls (30d)",
+      "activeTokens": "Active Tokens"
+    },
+    "quickStart": {
+      "title": "Quick Start",
+      "step1": {
+        "title": "Create an Application",
+        "description": "Register your first OAuth application to get started"
+      },
+      "step2": {
+        "title": "Get API Credentials",
+        "description": "Obtain your App ID and Secret for authentication"
+      },
+      "step3": {
+        "title": "Integrate with Your App",
+        "description": "Use our OAuth2 endpoints to authenticate users"
+      }
+    }
+  },
+  "applications": {
+    "title": "Applications",
+    "createNew": "Create Application",
+    "noApps": "No applications yet",
+    "createFirst": "Create your first application",
+    "viewDetails": "View Details",
+    "appId": "App ID",
+    "created": "Created",
+    "form": {
+      "name": "Application Name",
+      "namePlaceholder": "My App",
+      "description": "Description",
+      "descriptionPlaceholder": "Optional description",
+      "redirectUris": "Redirect URIs",
+      "redirectUrisPlaceholder": "https://example.com/callback",
+      "redirectUrisHelp": "Comma-separated list of allowed redirect URIs",
+      "scopes": "Scopes",
+      "scopesHelp": "Comma-separated list of OAuth scopes"
+    },
+    "detail": {
+      "credentials": "Credentials",
+      "clientId": "Client ID",
+      "clientSecret": "Client Secret",
+      "secretWarning": "⚠️ Keep your client secret secure. It should never be exposed in client-side code.",
+      "show": "Show",
+      "hide": "Hide",
+      "secretNote": "Note: For security, the full secret is only shown once during creation.",
+      "configuration": "Configuration",
+      "redirectUris": "Redirect URIs",
+      "allowedScopes": "Allowed Scopes",
+      "integrationGuide": "Integration Guide",
+      "authUrl": "Authorization URL",
+      "tokenExchange": "Token Exchange",
+      "getUserInfo": "Get User Info",
+      "dangerZone": "Danger Zone",
+      "deleteApp": "Delete Application",
+      "deleteWarning": "This action cannot be undone. All tokens will be invalidated.",
+      "deleting": "Deleting..."
+    }
+  },
+  "authorize": {
+    "title": "Authorization Request",
+    "requesting": "is requesting access to your account",
+    "permissions": "This application will be able to:",
+    "readProfile": "Read your profile information",
+    "readEmail": "Access your email address",
+    "scope": "Scopes",
+    "approve": "Authorize",
+    "deny": "Deny",
+    "authorizing": "Authorizing...",
+    "invalidClient": "Invalid client_id",
+    "appNotFound": "Application not found"
+  },
+  "modal": {
+    "deleteApp": {
+      "title": "Delete Application",
+      "message": "Are you sure you want to delete this application? This action cannot be undone and will invalidate all tokens."
+    }
+  }
+}

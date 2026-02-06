@@ -1,0 +1,146 @@
+{
+  "common": {
+    "loading": "加载中...",
+    "error": "错误",
+    "success": "成功",
+    "cancel": "取消",
+    "confirm": "确认",
+    "delete": "删除",
+    "edit": "编辑",
+    "save": "保存",
+    "create": "创建",
+    "copy": "复制",
+    "copied": "已复制！",
+    "back": "返回"
+  },
+  "nav": {
+    "home": "首页",
+    "dashboard": "控制台",
+    "applications": "应用管理",
+    "login": "登录",
+    "register": "注册",
+    "logout": "退出登录"
+  },
+  "home": {
+    "title": "开源 OAuth 服务器",
+    "subtitle": "在 Cloudflare 上部署安全的 OAuth2.0/OIDC 认证服务器",
+    "getStarted": "开始使用",
+    "viewOnGitHub": "在 GitHub 查看",
+    "features": {
+      "oauth": {
+        "title": "OAuth2/OIDC",
+        "description": "完整支持 OAuth2.0 和 OpenID Connect，包含多种授权类型"
+      },
+      "cloudflare": {
+        "title": "Cloudflare 驱动",
+        "description": "部署在 Cloudflare Workers 上，提供全球边缘性能"
+      },
+      "security": {
+        "title": "企业级安全",
+        "description": "内置 DDoS 防护、WAF 和自动 SSL 证书"
+      }
+    }
+  },
+  "auth": {
+    "login": {
+      "title": "登录",
+      "email": "邮箱",
+      "password": "密码",
+      "submit": "登录",
+      "noAccount": "还没有账号？",
+      "signUp": "注册"
+    },
+    "register": {
+      "title": "创建账号",
+      "email": "邮箱",
+      "password": "密码",
+      "confirmPassword": "确认密码",
+      "submit": "创建账号",
+      "hasAccount": "已有账号？",
+      "signIn": "登录",
+      "passwordMismatch": "密码不匹配"
+    }
+  },
+  "dashboard": {
+    "title": "控制台",
+    "stats": {
+      "totalApps": "应用总数",
+      "apiCalls": "API 调用（30天）",
+      "activeTokens": "活跃令牌"
+    },
+    "quickStart": {
+      "title": "快速开始",
+      "step1": {
+        "title": "创建应用",
+        "description": "注册您的第一个 OAuth 应用以开始使用"
+      },
+      "step2": {
+        "title": "获取 API 凭证",
+        "description": "获取您的应用 ID 和密钥用于身份验证"
+      },
+      "step3": {
+        "title": "集成到您的应用",
+        "description": "使用我们的 OAuth2 端点来验证用户身份"
+      }
+    }
+  },
+  "applications": {
+    "title": "应用管理",
+    "createNew": "创建应用",
+    "noApps": "暂无应用",
+    "createFirst": "创建您的第一个应用",
+    "viewDetails": "查看详情",
+    "appId": "应用 ID",
+    "created": "创建时间",
+    "form": {
+      "name": "应用名称",
+      "namePlaceholder": "我的应用",
+      "description": "描述",
+      "descriptionPlaceholder": "可选描述",
+      "redirectUris": "回调地址",
+      "redirectUrisPlaceholder": "https://example.com/callback",
+      "redirectUrisHelp": "用逗号分隔的允许的回调地址列表",
+      "scopes": "权限范围",
+      "scopesHelp": "用逗号分隔的 OAuth 权限范围"
+    },
+    "detail": {
+      "credentials": "凭证信息",
+      "clientId": "客户端 ID",
+      "clientSecret": "客户端密钥",
+      "secretWarning": "⚠️ 请妥善保管您的客户端密钥，不要在客户端代码中暴露。",
+      "show": "显示",
+      "hide": "隐藏",
+      "secretNote": "注意：出于安全考虑，完整密钥仅在创建时显示一次。",
+      "configuration": "配置信息",
+      "redirectUris": "回调地址",
+      "allowedScopes": "允许的权限范围",
+      "integrationGuide": "集成指南",
+      "authUrl": "授权地址",
+      "tokenExchange": "令牌交换",
+      "getUserInfo": "获取用户信息",
+      "dangerZone": "危险操作",
+      "deleteApp": "删除应用",
+      "deleteWarning": "此操作无法撤销，所有令牌将被作废。",
+      "deleting": "删除中..."
+    }
+  },
+  "authorize": {
+    "title": "授权请求",
+    "requesting": "正在请求访问您的账号",
+    "permissions": "此应用将能够：",
+    "readProfile": "读取您的个人资料信息",
+    "readEmail": "访问您的邮箱地址",
+    "scope": "权限范围",
+    "approve": "授权",
+    "deny": "拒绝",
+    "authorizing": "授权中...",
+    "invalidClient": "无效的客户端 ID",
+    "appNotFound": "应用未找到"
+  },
+  "modal": {
+    "deleteApp": {
+      "title": "删除应用",
+      "message": "确定要删除此应用吗？此操作无法撤销，所有令牌将被作废。"
+    }
+  }
+}

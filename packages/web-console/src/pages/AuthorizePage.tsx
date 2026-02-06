@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
 import { api } from '../api/client';
 
 export function AuthorizePage() {
+  const { t } = useTranslation();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { isAuthenticated, user } = useAuth();
@@ -31,7 +33,7 @@ export function AuthorizePage() {
 
   const loadApplication = async () => {
     if (!clientId) {
-      setError('Missing client_id parameter');
+      setError(t('authorize.invalidClient'));
       setLoading(false);
       return;
     }
@@ -40,7 +42,7 @@ export function AuthorizePage() {
       const app = await api.getApplication(clientId);
       setApplication(app);
     } catch (err: any) {
-      setError('Invalid client_id');
+      setError(t('authorize.invalidClient'));
     } finally {
       setLoading(false);
     }
@@ -86,7 +88,7 @@ export function AuthorizePage() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading...</p>
+          <p className="mt-4 text-gray-600">{t('common.loading')}</p>
         </div>
       </div>
     );
@@ -98,13 +100,13 @@ export function AuthorizePage() {
         <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8">
           <div className="text-center">
             <div className="text-red-600 text-5xl mb-4">⚠️</div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">Authorization Error</h2>
-            <p className="text-gray-600 mb-6">{error || 'Invalid authorization request'}</p>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">{t('authorize.title')}</h2>
+            <p className="text-gray-600 mb-6">{error || t('authorize.appNotFound')}</p>
             <button
               onClick={() => navigate('/dashboard')}
               className="bg-gray-600 hover:bg-gray-700 text-white px-6 py-2 rounded-md"
             >
-              Go to Dashboard
+              {t('nav.dashboard')}
             </button>
           </div>
         </div>
@@ -132,10 +134,10 @@ export function AuthorizePage() {
         <div className="bg-white rounded-lg shadow-lg border-2 border-gray-200">
           <div className="p-6 border-b border-gray-200">
             <h2 className="text-lg font-semibold text-gray-900 mb-2">
-              Authorize {application.name}
+              {t('authorize.title')}
             </h2>
             <p className="text-sm text-gray-600">
-              <span className="font-semibold">{application.name}</span> wants to access your AuthMaster account
+              <span className="font-semibold">{application.name}</span> {t('authorize.requesting')}
             </p>
             <div className="mt-3 flex items-center gap-2 text-sm text-gray-600">
               <span className="font-medium">{user?.email}</span>
@@ -144,7 +146,7 @@ export function AuthorizePage() {
 
           <div className="p-6">
             <h3 className="text-sm font-semibold text-gray-900 mb-3">
-              This application will be able to:
+              {t('authorize.permissions')}
             </h3>
             <ul className="space-y-2">
               {scopes.map((s, index) => (
@@ -189,14 +191,14 @@ export function AuthorizePage() {
               disabled={authorizing}
               className="flex-1 bg-white border-2 border-gray-300 text-gray-700 py-2 px-4 rounded-md font-semibold hover:bg-gray-50 disabled:opacity-50"
             >
-              Cancel
+              {t('authorize.deny')}
             </button>
             <button
               onClick={handleAuthorize}
               disabled={authorizing}
               className="flex-1 bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-md font-semibold disabled:opacity-50"
             >
-              {authorizing ? 'Authorizing...' : 'Authorize'}
+              {authorizing ? t('authorize.authorizing') : t('authorize.approve')}
             </button>
           </div>
         </div>

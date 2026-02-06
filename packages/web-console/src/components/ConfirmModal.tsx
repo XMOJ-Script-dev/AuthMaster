@@ -1,3 +1,5 @@
+import { useTranslation } from 'react-i18next';
+
 interface ConfirmModalProps {
   isOpen: boolean;
   title: string;
@@ -13,12 +15,13 @@ export function ConfirmModal({
   isOpen,
   title,
   message,
-  confirmText = 'Confirm',
-  cancelText = 'Cancel',
+  confirmText,
+  cancelText,
   onConfirm,
   onCancel,
   variant = 'danger',
 }: ConfirmModalProps) {
+  const { t } = useTranslation();
   if (!isOpen) return null;
 
   const variantStyles = {
@@ -46,13 +49,13 @@ export function ConfirmModal({
               onClick={onCancel}
               className="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300 transition-colors"
             >
-              {cancelText}
+              {cancelText || t('common.cancel')}
             </button>
             <button
               onClick={onConfirm}
               className={`px-4 py-2 text-white rounded transition-colors ${variantStyles[variant]}`}
             >
-              {confirmText}
+              {confirmText || t('common.confirm')}
             </button>
           </div>
         </div>

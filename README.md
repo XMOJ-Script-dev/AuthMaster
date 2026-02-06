@@ -2,6 +2,8 @@
 
 开源的 OAuth2.0/OIDC 认证服务器，部署在 Cloudflare 上。
 
+Demo: [Click Here](https://authmaster.pages.dev/)
+
 ## 特性
 
 - ✅ 完整的 OAuth2.0 和 OpenID Connect 支持
@@ -66,6 +68,7 @@ cp .env.example .env
 ```
 
 默认配置：
+
 ```
 VITE_API_URL=http://localhost:8787
 ```
@@ -108,20 +111,24 @@ npx wrangler pages deploy dist --project-name=authmaster
 ```
 
 **重要**: 部署后需要在 Cloudflare 控制台配置环境变量：
-- 后端: 在 `wrangler.toml` 中设置 `FRONTEND_URL` 
+
+- 后端: 在 `wrangler.toml` 中设置 `FRONTEND_URL`
 - 前端: 在 Cloudflare Pages 设置中添加 `VITE_API_URL部署 Worker API
-cd packages/worker-api
-npm run deploy
+  cd packages/worker-api
+  npm run deploy
 
 # 部署前端到 Cloudflare Pages
+
 cd packages/web-console
 npm run build
 npm run deploy
+
 ```
 
 ## 项目结构
 
 ```
+
 authmaster/
 ├── packages/
 │   ├── worker-api/       # Cloudflare Workers 后端
@@ -129,6 +136,7 @@ authmaster/
 │   └── shared/           # 共享类型和工具
 ├── docs/                 # 文档
 └── README.md
+
 ```
 
 ## 文档
@@ -145,3 +153,4 @@ MIT License - 详见 [LICENSE](./LICENSE) 文件
 ## 贡献
 
 欢迎提交 Issue 和 Pull Request！
+```

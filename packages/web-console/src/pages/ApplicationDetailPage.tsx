@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { api } from '../api/client';
 import { ConfirmModal } from '../components/ConfirmModal';
 
 export function ApplicationDetailPage() {
+  const { t } = useTranslation();
   const { appId } = useParams<{ appId: string }>();
   const navigate = useNavigate();
   const [application, setApplication] = useState<any>(null);
@@ -52,7 +54,7 @@ export function ApplicationDetailPage() {
   if (loading) {
     return (
       <div className="container mx-auto px-4 py-8">
-        <p>Loading...</p>
+        <p>{t('common.loading')}</p>
       </div>
     );
   }
@@ -61,10 +63,10 @@ export function ApplicationDetailPage() {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
-          {error || 'Application not found'}
+          {error || t('authorize.appNotFound')}
         </div>
         <Link to="/apps" className="text-blue-600 hover:text-blue-700">
-          ← Back to Applications
+          ← {t('common.back')}
         </Link>
       </div>
     );
@@ -74,7 +76,7 @@ export function ApplicationDetailPage() {
     <div className="container mx-auto px-4 py-8">
       <div className="mb-6">
         <Link to="/apps" className="text-blue-600 hover:text-blue-700 mb-4 inline-block">
-          ← Back to Applications
+          ← {t('common.back')}
         </Link>
         <h1 className="text-3xl font-bold text-gray-900">{application.name}</h1>
         {application.description && (
@@ -85,12 +87,12 @@ export function ApplicationDetailPage() {
       <div className="grid gap-6">
         {/* Credentials */}
         <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Credentials</h2>
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">{t('applications.detail.credentials')}</h2>
           
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Client ID
+                {t('applications.detail.clientId')}
               </label>
               <div className="flex items-center gap-2">
                 <code className="flex-1 bg-gray-100 px-3 py-2 rounded font-mono text-sm">
@@ -100,18 +102,18 @@ export function ApplicationDetailPage() {
                   onClick={() => handleCopy(application.app_id)}
                   className="px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
                 >
-                  Copy
+                  {t('common.copy')}
                 </button>
               </div>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Client Secret
+                {t('applications.detail.clientSecret')}
               </label>
               <div className="bg-yellow-50 border border-yellow-200 px-4 py-3 rounded mb-2">
                 <p className="text-sm text-yellow-800">
-                  ⚠️ Keep your client secret secure. It should never be exposed in client-side code.
+                  {t('applications.detail.secretWarning')}
                 </p>
               </div>
               <div className="flex items-center gap-2">
@@ -122,11 +124,11 @@ export function ApplicationDetailPage() {
                   onClick={() => setShowSecret(!showSecret)}
                   className="px-3 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
                 >
-                  {showSecret ? 'Hide' : 'Show'}
+                  {showSecret ? t('applications.detail.hide') : t('applications.detail.show')}
                 </button>
               </div>
               <p className="text-sm text-gray-500 mt-2">
-                Note: For security, the full secret is only shown once during creation.
+                {t('applications.detail.secretNote')}
               </p>
             </div>
           </div>
@@ -134,12 +136,12 @@ export function ApplicationDetailPage() {
 
         {/* Configuration */}
         <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Configuration</h2>
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">{t('applications.detail.configuration')}</h2>
           
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Redirect URIs
+                {t('applications.detail.redirectUris')}
               </label>
               <ul className="space-y-2">
                 {application.redirect_uris.map((uri: string, index: number) => (
@@ -154,7 +156,7 @@ export function ApplicationDetailPage() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Allowed Scopes
+                {t('applications.detail.allowedScopes')}
               </label>
               <div className="flex flex-wrap gap-2">
                 {application.scopes.map((scope: string, index: number) => (
@@ -170,7 +172,7 @@ export function ApplicationDetailPage() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Created
+                {t('applications.created')}
               </label>
               <p className="text-gray-900">
                 {new Date(application.created_at).toLocaleString()}
@@ -181,18 +183,18 @@ export function ApplicationDetailPage() {
 
         {/* Integration Guide */}
         <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Integration Guide</h2>
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">{t('applications.detail.integrationGuide')}</h2>
           
           <div className="space-y-4">
             <div>
-              <h3 className="font-semibold text-gray-900 mb-2">1. Authorization URL</h3>
+              <h3 className="font-semibold text-gray-900 mb-2">1. {t('applications.detail.authUrl')}</h3>
               <code className="block bg-gray-100 px-3 py-2 rounded text-sm overflow-x-auto">
                 http://localhost:3000/authorize?response_type=code&client_id={application.app_id}&redirect_uri={encodeURIComponent(application.redirect_uris[0])}&scope=openid+profile+email&state=RANDOM_STATE
               </code>
             </div>
 
             <div>
-              <h3 className="font-semibold text-gray-900 mb-2">2. Token Exchange</h3>
+              <h3 className="font-semibold text-gray-900 mb-2">2. {t('applications.detail.tokenExchange')}</h3>
               <pre className="bg-gray-100 px-3 py-2 rounded text-sm overflow-x-auto">
 {`curl -X POST http://localhost:8787/oauth2/token \\
   -H "Content-Type: application/json" \\
@@ -207,7 +209,7 @@ export function ApplicationDetailPage() {
             </div>
 
             <div>
-              <h3 className="font-semibold text-gray-900 mb-2">3. Get User Info</h3>
+              <h3 className="font-semibold text-gray-900 mb-2">3. {t('applications.detail.getUserInfo')}</h3>
               <pre className="bg-gray-100 px-3 py-2 rounded text-sm overflow-x-auto">
 {`curl http://localhost:8787/oauth2/userinfo \\
   -H "Authorization: Bearer ACCESS_TOKEN"`}
@@ -218,13 +220,13 @@ export function ApplicationDetailPage() {
 
         {/* Danger Zone */}
         <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Danger Zone</h2>
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">{t('applications.detail.dangerZone')}</h2>
           
           <div className="border border-red-200 rounded p-4">
             <div className="mb-4">
-              <h3 className="font-semibold text-gray-900">Delete Application</h3>
+              <h3 className="font-semibold text-gray-900">{t('applications.detail.deleteApp')}</h3>
               <p className="text-sm text-gray-600">
-                This action cannot be undone. All tokens will be invalidated.
+                {t('applications.detail.deleteWarning')}
               </p>
             </div>
             <button
@@ -232,7 +234,7 @@ export function ApplicationDetailPage() {
               disabled={deleting}
               className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50"
             >
-              {deleting ? 'Deleting...' : 'Delete Application'}
+              {deleting ? t('applications.detail.deleting') : t('applications.detail.deleteApp')}
             </button>
           </div>
         </div>
@@ -244,16 +246,14 @@ export function ApplicationDetailPage() {
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
           </svg>
-          <span>Copied!</span>
+          <span>{t('common.copied')}</span>
         </div>
       )}
 
       <ConfirmModal
         isOpen={showDeleteConfirm}
-        title="Delete Application"
-        message="Are you sure you want to delete this application? This action cannot be undone and will invalidate all tokens."
-        confirmText="Delete"
-        cancelText="Cancel"
+        title={t('modal.deleteApp.title')}
+        message={t('modal.deleteApp.message')}
         onConfirm={handleDelete}
         onCancel={() => setShowDeleteConfirm(false)}
         variant="danger"

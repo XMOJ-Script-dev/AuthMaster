@@ -1,22 +1,24 @@
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
 export function HomePage() {
+  const { t } = useTranslation();
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
       <div className="container mx-auto px-4 py-16">
         <div className="text-center mb-16">
           <h1 className="text-5xl font-bold text-gray-900 mb-4">
-            Welcome to AuthMaster
+            {t('home.title')}
           </h1>
           <p className="text-xl text-gray-600 mb-8">
-            Open-source OAuth2/OIDC authentication server
+            {t('home.subtitle')}
           </p>
           <div className="flex justify-center gap-4">
             <Link
               to="/register"
               className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg text-lg font-semibold"
             >
-              Get Started
+              {t('home.getStarted')}
             </Link>
             <a
               href="https://github.com/PythonSmall-Q/AuthMaster"
@@ -24,7 +26,7 @@ export function HomePage() {
               rel="noopener noreferrer"
               className="bg-gray-800 hover:bg-gray-900 text-white px-8 py-3 rounded-lg text-lg font-semibold"
             >
-              View on GitHub
+              {t('home.viewOnGitHub')}
             </a>
           </div>
         </div>
@@ -32,25 +34,25 @@ export function HomePage() {
         <div className="grid md:grid-cols-3 gap-8 mb-16">
           <div className="bg-white p-6 rounded-lg shadow-md">
             <div className="text-blue-600 text-4xl mb-4">🔐</div>
-            <h3 className="text-xl font-semibold mb-2">OAuth2/OIDC</h3>
+            <h3 className="text-xl font-semibold mb-2">{t('home.features.oauth.title')}</h3>
             <p className="text-gray-600">
-              Full OAuth2.0 and OpenID Connect support with multiple grant types
+              {t('home.features.oauth.description')}
             </p>
           </div>
 
           <div className="bg-white p-6 rounded-lg shadow-md">
             <div className="text-blue-600 text-4xl mb-4">⚡</div>
-            <h3 className="text-xl font-semibold mb-2">Cloudflare Powered</h3>
+            <h3 className="text-xl font-semibold mb-2">{t('home.features.cloudflare.title')}</h3>
             <p className="text-gray-600">
-              Deployed on Cloudflare Workers for global edge performance
+              {t('home.features.cloudflare.description')}
             </p>
           </div>
 
           <div className="bg-white p-6 rounded-lg shadow-md">
-            <div className="text-blue-600 text-4xl mb-4">📊</div>
-            <h3 className="text-xl font-semibold mb-2">Analytics</h3>
+            <div className="text-blue-600 text-4xl mb-4">🔒</div>
+            <h3 className="text-xl font-semibold mb-2">{t('home.features.security.title')}</h3>
             <p className="text-gray-600">
-              Monitor API usage, traffic, and performance metrics
+              {t('home.features.security.description')}
             </p>
           </div>
         </div>
