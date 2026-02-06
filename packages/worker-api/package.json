@@ -1,0 +1,23 @@
+{
+  "name": "@authmaster/worker-api",
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev --local",
+    "build": "tsc && wrangler deploy --dry-run",
+    "deploy": "wrangler deploy",
+    "test": "vitest",
+    "db:migrate:local": "wrangler d1 migrations apply authmaster-db --local",
+    "db:migrate": "wrangler d1 migrations apply authmaster-db",
+    "db:create": "wrangler d1 create authmaster-db"
+  },
+  "dependencies": {
+    "@authmaster/shared": "file:../shared"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20231218.0",
+    "typescript": "^5.3.3",
+    "vitest": "^1.0.4",
+    "wrangler": "^3.20.0"
+  }
+}

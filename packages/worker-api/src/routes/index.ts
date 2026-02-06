@@ -1,0 +1,221 @@
+import { Env } from '../types';
+import { Router, jsonResponse, corsHeaders } from '../router';
+import { AuthService } from '../services/auth';
+import { AppService } from '../services/app';
+import { OAuthService } from '../services/oauth';
+import { requireAuth, isAuthContext } from '../middleware/auth';
+import {
+  registerSchema,
+  loginSchema,
+  resetPasswordSchema,
+  createApplicationSchema,
+  authorizeSchema,
+  tokenSchema,
+  HTTP_STATUS,
+} from '@authmaster/shared';
+
+export function setupRoutes(router: Router): void {
+  // Health check
+  router.add('GET', '/health', async (request, env) => {
+    return jsonResponse({ status: 'ok' });
+  });
+
+  // OpenID Connect Discovery
+  router.add('GET', '/.well-known/openid-configuration', async (request, env) => {
+    return jsonResponse({
+      issuer: env.ISSUER,
+      authorization_endpoint: `${env.ISSUER}/oauth2/authorize`,
+      token_endpoint: `${env.ISSUER}/oauth2/token`,
+      userinfo_endpoint: `${env.ISSUER}/oauth2/userinfo`,
+      jwks_uri: `${env.ISSUER}/.well-known/jwks.json`,
+      response_types_supported: ['code', 'token'],
+      grant_types_supported: ['authorization_code', 'client_credentials', 'refresh_token'],
+      subject_types_supported: ['public'],
+      id_token_signing_alg_values_supported: ['HS256'],
+      scopes_supported: ['openid', 'profile', 'email', 'read', 'write'],
+      token_endpoint_auth_methods_supported: ['client_secret_post', 'client_secret_basic'],
+      claims_supported: ['sub', 'email', 'email_verified'],
+    });
+  });
+
+  // Auth routes
+  router.add('POST', '/api/v1/auth/register', async (request, env) => {
+    try {
+      const body = await request.json();
+      const input = registerSchema.parse(body);
+
+      const authService = new AuthService(env);
+      const user = await authService.register(input);
+
+      return jsonResponse(user, HTTP_STATUS.CREATED);
+    } catch (error: any) {
+      return jsonResponse({ error: error.message }, HTTP_STATUS.BAD_REQUEST);
+    }
+  });
+
+  router.add('POST', '/api/v1/auth/login', async (request, env) => {
+    try {
+      const body = await request.json();
+      const input = loginSchema.parse(body);
+
+      const authService = new AuthService(env);
+      const result = await authService.login(input);
+
+      return jsonResponse(result, HTTP_STATUS.OK);
+    } catch (error: any) {
+      return jsonResponse({ error: error.message }, HTTP_STATUS.UNAUTHORIZED);
+    }
+  });
+
+  router.add('POST', '/api/v1/auth/reset-password', async (request, env) => {
+    try {
+      const body = await request.json();
+      const input = resetPasswordSchema.parse(body);
+
+      const authService = new AuthService(env);
+      await authService.resetPassword(input.email);
+
+      return jsonResponse({ message: 'Password reset email sent' }, HTTP_STATUS.OK);
+    } catch (error: any) {
+      return jsonResponse({ error: error.message }, HTTP_STATUS.BAD_REQUEST);
+    }
+  });
+
+  // Application routes
+  router.add('POST', '/api/v1/apps/register', async (request, env) => {
+    const authResult = await requireAuth(request, env);
+    if (!isAuthContext(authResult)) {
+      return authResult;
+    }
+
+    try {
+      const body = await request.json();
+      const input = createApplicationSchema.parse(body);
+
+      const appService = new AppService(env);
+      const result = await appService.createApplication(authResult.userId, input);
+
+      return jsonResponse(result, HTTP_STATUS.CREATED);
+    } catch (error: any) {
+      return jsonResponse({ error: error.message }, HTTP_STATUS.BAD_REQUEST);
+    }
+  });
+
+  router.add('GET', '/api/v1/apps/:appId', async (request, env, params) => {
+    const authResult = await requireAuth(request, env);
+    if (!isAuthContext(authResult)) {
+      return authResult;
+    }
+
+    try {
+      const appService = new AppService(env);
+      const app = await appService.getApplication(params.appId);
+
+      if (!app) {
+        return jsonResponse({ error: 'Application not found' }, HTTP_STATUS.NOT_FOUND);
+      }
+
+      return jsonResponse(app, HTTP_STATUS.OK);
+    } catch (error: any) {
+      return jsonResponse({ error: error.message }, HTTP_STATUS.BAD_REQUEST);
+    }
+  });
+
+  router.add('DELETE', '/api/v1/apps/:appId', async (request, env, params) => {
+    const authResult = await requireAuth(request, env);
+    if (!isAuthContext(authResult)) {
+      return authResult;
+    }
+
+    try {
+      const appService = new AppService(env);
+      await appService.deleteApplication(params.appId, authResult.userId);
+
+      return jsonResponse({ message: 'Application deleted successfully' }, HTTP_STATUS.OK);
+    } catch (error: any) {
+      return jsonResponse({ error: error.message }, HTTP_STATUS.BAD_REQUEST);
+    }
+  });
+
+  router.add('GET', '/api/v1/apps', async (request, env) => {
+    const authResult = await requireAuth(request, env);
+    if (!isAuthContext(authResult)) {
+      return authResult;
+    }
+
+    try {
+      const appService = new AppService(env);
+      const apps = await appService.getUserApplications(authResult.userId);
+
+      return jsonResponse(apps, HTTP_STATUS.OK);
+    } catch (error: any) {
+      return jsonResponse({ error: error.message }, HTTP_STATUS.BAD_REQUEST);
+    }
+  });
+
+  // OAuth2 routes
+  router.add('GET', '/oauth2/authorize', async (request, env) => {
+    // Redirect to frontend authorization page
+    const url = new URL(request.url);
+    const params = url.searchParams.toString();
+    return Response.redirect(`${env.FRONTEND_URL}/authorize?${params}`, 302);
+  });
+
+  router.add('POST', '/oauth2/authorize', async (request, env) => {
+    const authResult = await requireAuth(request, env);
+    if (!isAuthContext(authResult)) {
+      return authResult;
+    }
+
+    try {
+      const body = await request.json();
+      const input = authorizeSchema.parse(body);
+
+      const oauthService = new OAuthService(env);
+      const result = await oauthService.authorize(input, authResult.userId);
+
+      // Redirect with code
+      const redirectUrl = new URL(result.redirect_uri);
+      redirectUrl.searchParams.set('code', result.code);
+      if (input.state) {
+        redirectUrl.searchParams.set('state', input.state);
+      }
+
+      return jsonResponse({ redirect_uri: redirectUrl.toString() }, HTTP_STATUS.OK);
+    } catch (error: any) {
+      return jsonResponse({ error: error.message }, HTTP_STATUS.BAD_REQUEST);
+    }
+  });
+
+  router.add('POST', '/oauth2/token', async (request, env) => {
+    try {
+      const body = await request.json();
+      const input = tokenSchema.parse(body);
+
+      const oauthService = new OAuthService(env);
+      const result = await oauthService.token(input);
+
+      return jsonResponse(result, HTTP_STATUS.OK);
+    } catch (error: any) {
+      return jsonResponse({ error: error.message }, HTTP_STATUS.BAD_REQUEST);
+    }
+  });
+
+  router.add('GET', '/oauth2/userinfo', async (request, env) => {
+    const authHeader = request.headers.get('Authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return jsonResponse({ error: 'Unauthorized' }, HTTP_STATUS.UNAUTHORIZED);
+    }
+
+    const accessToken = authHeader.substring(7);
+
+    try {
+      const oauthService = new OAuthService(env);
+      const userInfo = await oauthService.getUserInfo(accessToken);
+
+      return jsonResponse(userInfo, HTTP_STATUS.OK);
+    } catch (error: any) {
+      return jsonResponse({ error: error.message }, HTTP_STATUS.UNAUTHORIZED);
+    }
+  });
+}

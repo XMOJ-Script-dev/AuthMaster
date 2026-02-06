@@ -1,0 +1,38 @@
+{
+  "name": "authmaster",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Open-source OAuth2.0/OIDC authentication server for Cloudflare",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "test": "turbo run test",
+    "lint": "turbo run lint",
+    "deploy": "turbo run deploy",
+    "db:migrate": "cd packages/worker-api && wrangler d1 migrations apply authmaster-db"
+  },
+  "devDependencies": {
+    "turbo": "^1.11.0",
+    "typescript": "^5.3.3"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/PythonSmall-Q/AuthMaster.git"
+  },
+  "keywords": [
+    "oauth2",
+    "oidc",
+    "authentication",
+    "authorization",
+    "cloudflare",
+    "workers"
+  ],
+  "author": "",
+  "license": "MIT"
+}

@@ -1,0 +1,4 @@
+JWT_SECRET=your-secret-key-here
+ENCRYPTION_KEY=your-encryption-key-here
+FRONTEND_URL=http://localhost:3000
+ISSUER=http://localhost:8787
