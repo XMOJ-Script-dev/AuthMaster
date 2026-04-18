@@ -17,6 +17,7 @@
     "home": "首页",
     "dashboard": "控制台",
     "applications": "应用管理",
+    "admin": "系统管理",
     "xmojBinding": "XMOJ 绑定",
     "account": "账号",
     "changePassword": "修改密码",
@@ -85,6 +86,11 @@
   },
   "dashboard": {
     "title": "控制台",
+    "admin": {
+      "title": "管理员控制台",
+      "subtitle": "当前账号为管理员，请进入系统管理面板执行用户、应用和审计操作。",
+      "enterConsole": "进入系统管理"
+    },
     "user": {
       "stats": {
         "authorizedApps": "已授权应用",
@@ -120,6 +126,27 @@
       "step3": {
         "title": "集成到您的应用",
         "description": "使用我们的 OAuth2 端点来验证用户身份"
+      }
+    }
+  },
+  "admin": {
+    "dashboard": {
+      "title": "系统管理",
+      "subtitle": "管理员可在此查看系统全局数据并进入关键管理入口。",
+      "loadFailed": "加载系统统计失败",
+      "stats": {
+        "totalUsers": "用户总数",
+        "totalApps": "应用总数",
+        "auditLogs": "审计日志数"
+      },
+      "quickActions": {
+        "title": "快捷操作",
+        "manageApps": "管理应用",
+        "manageAppsHint": "查看全部应用并执行封禁、警告等操作。",
+        "refreshStats": "刷新控制台",
+        "refreshStatsHint": "返回控制台主页刷新全局统计。",
+        "accountSecurity": "账号安全",
+        "accountSecurityHint": "更新管理员密码与账号安全设置。"
       }
     }
   },

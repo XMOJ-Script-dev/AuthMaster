@@ -1,6 +1,8 @@
 // User types
 export type AccountRole = 'user' | 'merchant' | 'admin';
 export type AccountStatus = 'active' | 'disabled';
+export type AppValidationStatus = 'unverified' | 'pending' | 'validated' | 'rejected';
+export type AppChangeRequestStatus = 'pending' | 'approved' | 'rejected';
 
 export interface User {
   id: string;
@@ -58,6 +60,11 @@ export interface AdminApplicationListItem {
   app_id: string;
   name: string;
   description?: string;
+  creator_name: string;
+  is_official: boolean;
+  validation_status: AppValidationStatus;
+  validation_submitted_at?: string;
+  validation_reviewed_at?: string;
   owner_user_id: string;
   owner_email: string;
   redirect_uris: string[];
@@ -83,7 +90,9 @@ export type AdminAuditAction =
   | 'user.status.update'
   | 'app.block.update'
   | 'app.warning.update'
-  | 'app.delete';
+  | 'app.delete'
+  | 'app.validation.review'
+  | 'app.change.review';
 
 export interface AdminAuditLogItem {
   id: string;
@@ -115,6 +124,14 @@ export interface Application {
   app_secret: string;
   name: string;
   description?: string;
+  creator_name?: string;
+  is_official?: boolean;
+  validation_status?: AppValidationStatus;
+  validation_submission?: string;
+  validation_submitted_at?: string;
+  validation_review_note?: string;
+  validation_reviewed_at?: string;
+  validation_reviewed_by?: string;
   redirect_uris: string[];
   scopes: string[];
   is_blocked?: boolean;
@@ -131,9 +148,29 @@ export interface ApplicationPublic {
   app_id: string;
   name: string;
   description?: string;
+  creator_name?: string;
+  is_official?: boolean;
+  validation_status?: AppValidationStatus;
+  validation_submitted_at?: string;
+  validation_review_note?: string;
+  validation_reviewed_at?: string;
   redirect_uris: string[];
   scopes: string[];
   created_at: string;
+}
+
+export interface AppChangeRequestItem {
+  id: string;
+  app_id: string;
+  submitted_by_user_id: string;
+  payload: Record<string, unknown>;
+  submission_note?: string;
+  status: AppChangeRequestStatus;
+  review_note?: string;
+  reviewed_by_user_id?: string;
+  reviewed_at?: string;
+  created_at: string;
+  updated_at: string;
 }
 
 // Authorization types
@@ -215,6 +252,8 @@ export interface ResetPasswordRequest {
 export interface CreateApplicationRequest {
   name: string;
   description?: string;
+  creator_name: string;
+  is_official?: boolean;
   redirect_uris: string[];
   scopes: string[];
 }

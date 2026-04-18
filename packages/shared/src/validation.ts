@@ -25,11 +25,42 @@ export const changePasswordSchema = z.object({
 export const createApplicationSchema = z.object({
   name: z.string().min(1).max(255),
   description: z.string().max(1000).optional(),
+  creator_name: z.string().min(1).max(100),
+  is_official: z.boolean().optional(),
   redirect_uris: z.array(z.string().url()).min(1).max(10),
   scopes: z.array(z.string()).min(1).max(20),
 });
 
-export const updateApplicationSchema = createApplicationSchema;
+export const updateApplicationSchema = z.object({
+  name: z.string().min(1).max(255),
+  description: z.string().max(1000).optional(),
+  creator_name: z.string().min(1).max(100).optional(),
+  is_official: z.boolean().optional(),
+  redirect_uris: z.array(z.string().url()).min(1).max(10),
+  scopes: z.array(z.string()).min(1).max(20),
+  submission_note: z.string().min(1).max(1000).optional(),
+});
+
+export const submitValidationSchema = z.object({
+  content: z.string().min(1).max(2000),
+});
+
+export const adminReviewValidationSchema = z.object({
+  status: z.enum(['validated', 'rejected']),
+  review_note: z.string().min(1).max(1000).optional(),
+});
+
+export const adminListAppChangeRequestsQuerySchema = z.object({
+  limit: z.coerce.number().int().min(1).max(100).default(50),
+  offset: z.coerce.number().int().min(0).default(0),
+  app_id: z.string().min(1).max(255).optional(),
+  status: z.enum(['pending', 'approved', 'rejected']).optional(),
+});
+
+export const adminReviewAppChangeRequestSchema = z.object({
+  status: z.enum(['approved', 'rejected']),
+  review_note: z.string().min(1).max(1000).optional(),
+});
 
 // OAuth2 validation schemas
 export const authorizeSchema = z.object({
@@ -106,6 +137,8 @@ export const adminListAuditLogsQuerySchema = z.object({
       'app.block.update',
       'app.warning.update',
       'app.delete',
+      'app.validation.review',
+      'app.change.review',
     ])
     .optional(),
 });
@@ -116,6 +149,8 @@ export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
 export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;
 export type CreateApplicationInput = z.infer<typeof createApplicationSchema>;
 export type UpdateApplicationInput = z.infer<typeof updateApplicationSchema>;
+export type SubmitValidationInput = z.infer<typeof submitValidationSchema>;
+export type AdminReviewValidationInput = z.infer<typeof adminReviewValidationSchema>;
 export type AuthorizeInput = z.infer<typeof authorizeSchema>;
 export type TokenInput = z.infer<typeof tokenSchema>;
 export type BindXmojInput = z.infer<typeof bindXmojSchema>;
@@ -126,3 +161,5 @@ export type AdminListApplicationsQueryInput = z.infer<typeof adminListApplicatio
 export type AdminUpdateAppBlockInput = z.infer<typeof adminUpdateAppBlockSchema>;
 export type AdminUpdateAppWarningInput = z.infer<typeof adminUpdateAppWarningSchema>;
 export type AdminListAuditLogsQueryInput = z.infer<typeof adminListAuditLogsQuerySchema>;
+export type AdminListAppChangeRequestsQueryInput = z.infer<typeof adminListAppChangeRequestsQuerySchema>;
+export type AdminReviewAppChangeRequestInput = z.infer<typeof adminReviewAppChangeRequestSchema>;

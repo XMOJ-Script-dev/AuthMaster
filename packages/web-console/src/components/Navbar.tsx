@@ -9,7 +9,8 @@ export function Navbar() {
   const { t } = useTranslation();
   const [menuOpen, setMenuOpen] = useState(false);
   const role = user?.role;
-  const canManageApps = role === 'merchant' || role === 'admin';
+  const isAdmin = role === 'admin';
+  const canManageApps = role === 'merchant';
   const canBindXmoj = role === 'user' || role === undefined;
   const displayName = useMemo(() => {
     if (!user?.email) {
@@ -37,6 +38,11 @@ export function Navbar() {
                 {canManageApps && (
                   <Link to="/apps" className="hover:text-blue-200">
                     {t('nav.applications')}
+                  </Link>
+                )}
+                {isAdmin && (
+                  <Link to="/admin" className="hover:text-blue-200">
+                    {t('nav.admin')}
                   </Link>
                 )}
                 {canBindXmoj && (

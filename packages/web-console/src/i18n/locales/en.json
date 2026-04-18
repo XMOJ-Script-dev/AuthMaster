@@ -17,6 +17,7 @@
     "home": "Home",
     "dashboard": "Dashboard",
     "applications": "Applications",
+    "admin": "System Admin",
     "xmojBinding": "XMOJ Binding",
     "account": "Account",
     "changePassword": "Change Password",
@@ -85,6 +86,11 @@
   },
   "dashboard": {
     "title": "Dashboard",
+    "admin": {
+      "title": "Admin Dashboard",
+      "subtitle": "This account is an administrator. Enter the system management console for users, apps, and audit operations.",
+      "enterConsole": "Enter System Console"
+    },
     "user": {
       "stats": {
         "authorizedApps": "Authorized Apps",
@@ -120,6 +126,27 @@
       "step3": {
         "title": "Integrate with Your App",
         "description": "Use our OAuth2 endpoints to authenticate users"
+      }
+    }
+  },
+  "admin": {
+    "dashboard": {
+      "title": "System Management",
+      "subtitle": "Administrators can view global stats and jump to critical management actions here.",
+      "loadFailed": "Failed to load system statistics",
+      "stats": {
+        "totalUsers": "Total Users",
+        "totalApps": "Total Applications",
+        "auditLogs": "Audit Log Count"
+      },
+      "quickActions": {
+        "title": "Quick Actions",
+        "manageApps": "Manage Applications",
+        "manageAppsHint": "Review all applications and perform block or warning actions.",
+        "refreshStats": "Refresh Console",
+        "refreshStatsHint": "Return to this page to refresh global statistics.",
+        "accountSecurity": "Account Security",
+        "accountSecurityHint": "Update admin password and security settings."
       }
     }
   },

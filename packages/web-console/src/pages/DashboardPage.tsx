@@ -12,7 +12,8 @@ export function DashboardPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const isMerchantView = user?.role === 'merchant' || user?.role === 'admin';
+  const isAdmin = user?.role === 'admin';
+  const isMerchantView = user?.role === 'merchant';
 
   const activeTokens = useMemo(
     () => authorizedApps.reduce((sum, app) => sum + (app.active_tokens || 0), 0),
@@ -20,7 +21,7 @@ export function DashboardPage() {
   );
 
   useEffect(() => {
-    if (isMerchantView) {
+    if (isMerchantView || isAdmin) {
       return;
     }
 
@@ -53,7 +54,7 @@ export function DashboardPage() {
     }
   };
 
-  if (!isMerchantView) {
+  if (!isMerchantView && !isAdmin) {
     return (
       <div className="container mx-auto px-4 py-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-8">{t('dashboard.title')}</h1>
@@ -120,6 +121,21 @@ export function DashboardPage() {
             </div>
           )}
         </div>
+      </div>
+    );
+  }
+
+  if (isAdmin) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <h1 className="text-3xl font-bold text-gray-900 mb-4">{t('dashboard.admin.title')}</h1>
+        <p className="text-gray-600 mb-8">{t('dashboard.admin.subtitle')}</p>
+        <Link
+          to="/admin"
+          className="inline-flex items-center rounded-md bg-blue-600 px-5 py-3 text-white hover:bg-blue-700"
+        >
+          {t('dashboard.admin.enterConsole')}
+        </Link>
       </div>
     );
   }

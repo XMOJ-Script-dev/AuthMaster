@@ -11,6 +11,7 @@ import { ApplicationDetailPage } from './pages/ApplicationDetailPage';
 import { AuthorizePage } from './pages/AuthorizePage';
 import { XmojBindingPage } from './pages/XmojBindingPage';
 import { ChangePasswordPage } from './pages/ChangePasswordPage';
+import { AdminDashboardPage } from './pages/AdminDashboardPage';
 
 function App() {
   return (
@@ -28,6 +29,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <DashboardPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin"
+              element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <AdminDashboardPage />
                 </ProtectedRoute>
               }
             />
