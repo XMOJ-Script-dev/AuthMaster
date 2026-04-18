@@ -26,6 +26,7 @@ export const createApplicationSchema = z.object({
   name: z.string().min(1).max(255),
   description: z.string().max(1000).optional(),
   creator_name: z.string().min(1).max(100),
+  publisher_website: z.string().url().max(255).optional(),
   is_official: z.boolean().optional(),
   redirect_uris: z.array(z.string().url()).min(1).max(10),
   scopes: z.array(z.string()).min(1).max(20),
@@ -35,6 +36,7 @@ export const updateApplicationSchema = z.object({
   name: z.string().min(1).max(255),
   description: z.string().max(1000).optional(),
   creator_name: z.string().min(1).max(100).optional(),
+  publisher_website: z.string().url().max(255).optional(),
   is_official: z.boolean().optional(),
   redirect_uris: z.array(z.string().url()).min(1).max(10),
   scopes: z.array(z.string()).min(1).max(20),
@@ -112,6 +114,7 @@ export const adminListApplicationsQuerySchema = z.object({
   owner_email: z.string().min(1).max(255).optional(),
   app_id: z.string().min(1).max(255).optional(),
   name: z.string().min(1).max(255).optional(),
+  validation_status: z.enum(['unverified', 'pending', 'validated', 'rejected']).optional(),
   is_blocked: z.coerce.boolean().optional(),
 });
 

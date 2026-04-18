@@ -37,6 +37,7 @@ export class AppService {
       input.name,
       input.description,
       input.creator_name,
+      input.publisher_website,
       isOfficial,
       input.redirect_uris,
       input.scopes
@@ -135,6 +136,7 @@ export class AppService {
           redirect_uris: input.redirect_uris,
           scopes: input.scopes,
           creator_name: input.creator_name,
+          publisher_website: input.publisher_website,
           is_official: input.is_official,
         },
         submission_note: input.submission_note,
@@ -151,6 +153,7 @@ export class AppService {
       input.name,
       input.description,
       input.creator_name,
+      input.publisher_website,
       userRole === 'admin' ? input.is_official : undefined,
       input.redirect_uris,
       input.scopes
@@ -201,6 +204,7 @@ export class AppService {
       String(payload.name || ''),
       typeof payload.description === 'string' ? payload.description : undefined,
       typeof payload.creator_name === 'string' ? payload.creator_name : undefined,
+      typeof payload.publisher_website === 'string' ? payload.publisher_website : undefined,
       typeof payload.is_official === 'boolean' ? payload.is_official : undefined,
       Array.isArray(payload.redirect_uris) ? (payload.redirect_uris as string[]) : [],
       Array.isArray(payload.scopes) ? (payload.scopes as string[]) : []
@@ -227,6 +231,7 @@ export class AppService {
       name: app.name,
       description: app.description,
       creator_name: app.creator_name,
+      publisher_website: app.publisher_website,
       is_official: app.is_official,
       validation_status: app.validation_status,
       validation_submitted_at: app.validation_submitted_at,

@@ -19,6 +19,7 @@ export interface ApplicationItem {
   name: string;
   description?: string;
   creator_name?: string;
+  publisher_website?: string;
   is_official?: boolean;
   validation_status?: AppValidationStatus;
   validation_submitted_at?: string;
@@ -67,6 +68,7 @@ export interface AdminApplicationListItem {
   name: string;
   description?: string;
   creator_name: string;
+  publisher_website?: string;
   is_official: boolean;
   validation_status: AppValidationStatus;
   validation_submitted_at?: string;
@@ -204,6 +206,7 @@ class ApiClient {
     name: string;
     description?: string;
     creator_name: string;
+    publisher_website?: string;
     is_official?: boolean;
     redirect_uris: string[];
     scopes: string[];
@@ -244,6 +247,7 @@ class ApiClient {
       name: string;
       description?: string;
       creator_name?: string;
+      publisher_website?: string;
       is_official?: boolean;
       redirect_uris: string[];
       scopes: string[];
@@ -366,6 +370,7 @@ class ApiClient {
     owner_email?: string;
     app_id?: string;
     name?: string;
+    validation_status?: AppValidationStatus;
     is_blocked?: boolean;
   }) {
     const searchParams = new URLSearchParams();
@@ -383,6 +388,9 @@ class ApiClient {
     }
     if (params?.name) {
       searchParams.set('name', params.name);
+    }
+    if (params?.validation_status) {
+      searchParams.set('validation_status', params.validation_status);
     }
     if (params?.is_blocked !== undefined) {
       searchParams.set('is_blocked', String(params.is_blocked));

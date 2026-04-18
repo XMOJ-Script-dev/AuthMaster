@@ -65,13 +65,27 @@ export function AdminDashboardPage() {
 
       <div className="bg-white rounded-lg shadow p-6">
         <h2 className="text-xl font-semibold text-gray-900 mb-4">{t('admin.dashboard.quickActions.title')}</h2>
-        <div className="grid md:grid-cols-3 gap-4">
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
           <Link
             to="/apps"
             className="rounded-md border border-gray-200 px-4 py-3 hover:border-blue-500 hover:bg-blue-50"
           >
             <p className="font-semibold text-gray-900">{t('admin.dashboard.quickActions.manageApps')}</p>
             <p className="text-sm text-gray-600 mt-1">{t('admin.dashboard.quickActions.manageAppsHint')}</p>
+          </Link>
+          <Link
+            to="/admin/pending-apps"
+            className="rounded-md border border-gray-200 px-4 py-3 hover:border-blue-500 hover:bg-blue-50"
+          >
+            <p className="font-semibold text-gray-900">{t('admin.dashboard.quickActions.pendingApps')}</p>
+            <p className="text-sm text-gray-600 mt-1">{t('admin.dashboard.quickActions.pendingAppsHint')}</p>
+          </Link>
+          <Link
+            to="/admin/users"
+            className="rounded-md border border-gray-200 px-4 py-3 hover:border-blue-500 hover:bg-blue-50"
+          >
+            <p className="font-semibold text-gray-900">{t('admin.dashboard.quickActions.manageUsers')}</p>
+            <p className="text-sm text-gray-600 mt-1">{t('admin.dashboard.quickActions.manageUsersHint')}</p>
           </Link>
           <Link
             to="/dashboard"

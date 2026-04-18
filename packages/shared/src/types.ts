@@ -61,6 +61,7 @@ export interface AdminApplicationListItem {
   name: string;
   description?: string;
   creator_name: string;
+  publisher_website?: string;
   is_official: boolean;
   validation_status: AppValidationStatus;
   validation_submitted_at?: string;
@@ -125,6 +126,7 @@ export interface Application {
   name: string;
   description?: string;
   creator_name?: string;
+  publisher_website?: string;
   is_official?: boolean;
   validation_status?: AppValidationStatus;
   validation_submission?: string;
@@ -149,6 +151,7 @@ export interface ApplicationPublic {
   name: string;
   description?: string;
   creator_name?: string;
+  publisher_website?: string;
   is_official?: boolean;
   validation_status?: AppValidationStatus;
   validation_submitted_at?: string;
@@ -253,6 +256,7 @@ export interface CreateApplicationRequest {
   name: string;
   description?: string;
   creator_name: string;
+  publisher_website?: string;
   is_official?: boolean;
   redirect_uris: string[];
   scopes: string[];

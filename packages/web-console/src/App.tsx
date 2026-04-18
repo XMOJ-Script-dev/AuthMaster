@@ -12,6 +12,8 @@ import { AuthorizePage } from './pages/AuthorizePage';
 import { XmojBindingPage } from './pages/XmojBindingPage';
 import { ChangePasswordPage } from './pages/ChangePasswordPage';
 import { AdminDashboardPage } from './pages/AdminDashboardPage';
+import { AdminPendingAppsPage } from './pages/AdminPendingAppsPage';
+import { AdminUsersPage } from './pages/AdminUsersPage';
 
 function App() {
   return (
@@ -37,6 +39,22 @@ function App() {
               element={
                 <ProtectedRoute allowedRoles={['admin']}>
                   <AdminDashboardPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/pending-apps"
+              element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <AdminPendingAppsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/users"
+              element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <AdminUsersPage />
                 </ProtectedRoute>
               }
             />

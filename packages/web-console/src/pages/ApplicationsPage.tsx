@@ -19,6 +19,7 @@ export function ApplicationsPage() {
     name: '',
     description: '',
     creator_name: '',
+    publisher_website: '',
     is_official: false,
     redirect_uris: '',
     custom_scopes: '',
@@ -68,6 +69,7 @@ export function ApplicationsPage() {
         name: formData.name,
         description: formData.description || undefined,
         creator_name: formData.creator_name,
+        publisher_website: formData.publisher_website || undefined,
         is_official: user?.role === 'admin' ? formData.is_official : undefined,
         redirect_uris: formData.redirect_uris.split(',').map(s => s.trim()),
         scopes: scopedValues,
@@ -78,6 +80,7 @@ export function ApplicationsPage() {
         name: '',
         description: '',
         creator_name: '',
+        publisher_website: '',
         is_official: false,
         redirect_uris: '',
         custom_scopes: '',
@@ -102,6 +105,24 @@ export function ApplicationsPage() {
       loadApplications();
     } catch (err: any) {
       setError(err.message);
+    }
+  };
+
+  const handleToggleBlock = async (app: any) => {
+    if (!isAdmin) {
+      return;
+    }
+
+    try {
+      if (app.is_blocked) {
+        await api.updateAdminApplicationBlock(app.app_id, false);
+      } else {
+        const reason = window.prompt(t('applications.admin.blockReasonPrompt')) || undefined;
+        await api.updateAdminApplicationBlock(app.app_id, true, reason);
+      }
+      await loadApplications();
+    } catch (err: any) {
+      setError(err.message || t('applications.admin.blockFailed'));
     }
   };
 
@@ -219,6 +240,20 @@ export function ApplicationsPage() {
                 placeholder={t('applications.form.descriptionPlaceholder')}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 rows={3}
+              />
+            </div>
+
+            <div>
+              <label htmlFor="app-publisher-website" className="block text-sm font-medium text-gray-700 mb-2">
+                {t('applications.form.publisherWebsite')}
+              </label>
+              <input
+                id="app-publisher-website"
+                type="url"
+                value={formData.publisher_website}
+                onChange={(e) => setFormData({ ...formData, publisher_website: e.target.value })}
+                placeholder={t('applications.form.publisherWebsitePlaceholder')}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
 
@@ -362,6 +397,16 @@ export function ApplicationsPage() {
                       {t('applications.creator')}: {app.creator_name}
                     </p>
                   )}
+                  {app.publisher_website && (
+                    <p className="text-xs text-gray-500 mt-1">
+                      {t('applications.publisherWebsite')}: <a className="text-blue-600 hover:underline" href={app.publisher_website} target="_blank" rel="noreferrer">{app.publisher_website}</a>
+                    </p>
+                  )}
+                  {isAdmin && app.is_blocked && (
+                    <p className="text-xs text-red-600 mt-1">
+                      {t('applications.admin.blocked')}: {app.blocked_reason || '-'}
+                    </p>
+                  )}
                 </div>
                 <div className="flex gap-2">
                   <Link
@@ -370,6 +415,14 @@ export function ApplicationsPage() {
                   >
                     {t('applications.viewDetails')}
                   </Link>
+                  {isAdmin && (
+                    <button
+                      onClick={() => handleToggleBlock(app)}
+                      className="text-orange-600 hover:text-orange-700 font-medium"
+                    >
+                      {app.is_blocked ? t('applications.admin.unblock') : t('applications.admin.block')}
+                    </button>
+                  )}
                   {canManageApps && (
                     <button
                       onClick={() => setDeleteConfirm(app.app_id)}

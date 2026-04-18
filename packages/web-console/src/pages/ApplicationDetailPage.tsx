@@ -29,6 +29,7 @@ export function ApplicationDetailPage() {
     name: '',
     description: '',
     creator_name: '',
+    publisher_website: '',
     is_official: false,
     submission_note: '',
     redirect_uris: '',
@@ -53,6 +54,7 @@ export function ApplicationDetailPage() {
         name: data.name || '',
         description: data.description || '',
         creator_name: data.creator_name || '',
+        publisher_website: data.publisher_website || '',
         is_official: !!data.is_official,
         submission_note: '',
         redirect_uris: (data.redirect_uris || []).join(', '),
@@ -106,6 +108,7 @@ export function ApplicationDetailPage() {
         name: formData.name,
         description: formData.description || undefined,
         creator_name: formData.creator_name || undefined,
+        publisher_website: formData.publisher_website || undefined,
         is_official: isAdmin ? formData.is_official : undefined,
         submission_note: formData.submission_note || undefined,
         redirect_uris: formData.redirect_uris.split(',').map(s => s.trim()).filter(Boolean),
@@ -246,6 +249,20 @@ export function ApplicationDetailPage() {
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="edit-app-publisher-website" className="block text-sm font-medium text-gray-700 mb-2">
+                  {t('applications.form.publisherWebsite')}
+                </label>
+                <input
+                  id="edit-app-publisher-website"
+                  type="url"
+                  value={formData.publisher_website}
+                  onChange={(e) => setFormData({ ...formData, publisher_website: e.target.value })}
+                  placeholder={t('applications.form.publisherWebsitePlaceholder')}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
@@ -535,6 +552,19 @@ export function ApplicationDetailPage() {
                 {t('applications.creator')}
               </label>
               <p className="text-gray-900">{application.creator_name || '-'}</p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                {t('applications.publisherWebsite')}
+              </label>
+              {application.publisher_website ? (
+                <a href={application.publisher_website} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline">
+                  {application.publisher_website}
+                </a>
+              ) : (
+                <p className="text-gray-900">-</p>
+              )}
             </div>
 
             <div>

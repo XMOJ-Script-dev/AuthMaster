@@ -143,16 +143,39 @@
         "title": "快捷操作",
         "manageApps": "管理应用",
         "manageAppsHint": "查看全部应用并执行封禁、警告等操作。",
+        "pendingApps": "待审批应用",
+        "pendingAppsHint": "单独查看并处理待批准应用与待审核改动。",
+        "manageUsers": "账号管理",
+        "manageUsersHint": "启用或禁用用户账号。",
         "refreshStats": "刷新控制台",
         "refreshStatsHint": "返回控制台主页刷新全局统计。",
         "accountSecurity": "账号安全",
         "accountSecurityHint": "更新管理员密码与账号安全设置。"
       }
+    },
+    "pending": {
+      "title": "待审批应用",
+      "subtitle": "单独列出需要管理员批准的应用与改动请求。",
+      "validationApps": "待验证应用",
+      "changeRequests": "待审核改动请求",
+      "empty": "当前没有待验证应用。",
+      "emptyChanges": "当前没有待审核改动。",
+      "loadFailed": "加载待审批列表失败"
+    },
+    "users": {
+      "title": "账号管理",
+      "subtitle": "管理员可禁用或重新启用账号。",
+      "disable": "禁用",
+      "enable": "启用",
+      "disableReasonPrompt": "请输入禁用原因（可选）",
+      "loadFailed": "加载账号列表失败",
+      "updateFailed": "更新账号状态失败"
     }
   },
   "applications": {
     "title": "应用管理",
     "creator": "创建方",
+    "publisherWebsite": "发布方官网",
     "badges": {
       "official": "官方应用",
       "validated": "已验证",
@@ -172,6 +195,8 @@
       "descriptionPlaceholder": "可选描述",
       "creatorName": "创建方名称",
       "creatorNamePlaceholder": "请输入创建方名称",
+      "publisherWebsite": "发布方官网",
+      "publisherWebsitePlaceholder": "https://example.com",
       "isOfficial": "标记为官方应用（仅管理员）",
       "redirectUris": "回调地址",
       "redirectUrisPlaceholder": "https://example.com/callback",
@@ -219,6 +244,13 @@
       "changeRequests": "修改审核记录",
       "requestStatus": "请求状态",
       "reviewNotePlaceholder": "填写审核备注（可选）"
+    },
+    "admin": {
+      "block": "禁用应用",
+      "unblock": "恢复应用",
+      "blocked": "已禁用",
+      "blockReasonPrompt": "请输入禁用原因（可选）",
+      "blockFailed": "更新应用禁用状态失败"
     }
   },
   "authorize": {

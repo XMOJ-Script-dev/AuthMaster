@@ -252,6 +252,7 @@ export class Database {
     name: string,
     description: string | undefined,
     creatorName: string,
+    publisherWebsite: string | undefined,
     isOfficial: boolean,
     redirectUris: string[],
     scopes: string[]
@@ -269,13 +270,14 @@ export class Database {
           name,
           description,
           creator_name,
+          publisher_website,
           is_official,
           validation_status,
           redirect_uris,
           scopes,
           created_at,
           updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
       )
       .bind(
         id,
@@ -285,6 +287,7 @@ export class Database {
         name,
         description || null,
         creatorName,
+        publisherWebsite || null,
         isOfficial ? 1 : 0,
         isOfficial ? 'validated' : 'unverified',
         JSON.stringify(redirectUris),
@@ -302,6 +305,7 @@ export class Database {
       name,
       description,
       creator_name: creatorName,
+      publisher_website: publisherWebsite,
       is_official: isOfficial,
       validation_status: isOfficial ? 'validated' : 'unverified',
       validation_submission: undefined,
@@ -332,6 +336,7 @@ export class Database {
     return {
       ...result,
       creator_name: result.creator_name || result.name,
+      publisher_website: result.publisher_website || undefined,
       is_official: !!result.is_official,
       validation_status: (result.validation_status || 'unverified') as AppValidationStatus,
       validation_submission: result.validation_submission || undefined,
@@ -358,6 +363,7 @@ export class Database {
     return results.results.map(app => ({
       ...app,
       creator_name: app.creator_name || app.name,
+      publisher_website: app.publisher_website || undefined,
       is_official: !!app.is_official,
       validation_status: (app.validation_status || 'unverified') as AppValidationStatus,
       validation_submission: app.validation_submission || undefined,
@@ -395,6 +401,7 @@ export class Database {
     return {
       ...result,
       creator_name: result.creator_name || result.name,
+      publisher_website: result.publisher_website || undefined,
       is_official: !!result.is_official,
       validation_status: (result.validation_status || 'unverified') as AppValidationStatus,
       validation_submission: result.validation_submission || undefined,
@@ -419,6 +426,7 @@ export class Database {
     owner_email?: string;
     app_id?: string;
     name?: string;
+    validation_status?: AppValidationStatus;
     is_blocked?: boolean;
   }): Promise<{ applications: AdminApplicationListItem[]; total: number }> {
     const whereClauses: string[] = [];
@@ -439,6 +447,11 @@ export class Database {
       whereBindings.push(`%${options.name}%`);
     }
 
+    if (options.validation_status) {
+      whereClauses.push('app.validation_status = ?');
+      whereBindings.push(options.validation_status);
+    }
+
     if (typeof options.is_blocked === 'boolean') {
       whereClauses.push('app.is_blocked = ?');
       whereBindings.push(options.is_blocked ? 1 : 0);
@@ -452,6 +465,7 @@ export class Database {
         app.name,
         app.description,
         app.creator_name,
+        app.publisher_website,
         app.is_official,
         app.validation_status,
         app.validation_submitted_at,
@@ -497,6 +511,7 @@ export class Database {
         name: app.name,
         description: app.description || undefined,
         creator_name: app.creator_name || app.name,
+        publisher_website: app.publisher_website || undefined,
         is_official: !!app.is_official,
         validation_status: (app.validation_status || 'unverified') as AppValidationStatus,
         validation_submitted_at: app.validation_submitted_at || undefined,
@@ -671,6 +686,7 @@ export class Database {
     name: string,
     description: string | undefined,
     creatorName: string | undefined,
+    publisherWebsite: string | undefined,
     isOfficial: boolean | undefined,
     redirectUris: string[],
     scopes: string[]
@@ -683,6 +699,7 @@ export class Database {
          SET name = ?,
              description = ?,
              creator_name = COALESCE(?, creator_name),
+             publisher_website = COALESCE(?, publisher_website),
              is_official = COALESCE(?, is_official),
              redirect_uris = ?,
              scopes = ?,
@@ -693,6 +710,7 @@ export class Database {
         name,
         description || null,
         creatorName || null,
+        publisherWebsite || null,
         typeof isOfficial === 'boolean' ? (isOfficial ? 1 : 0) : null,
         JSON.stringify(redirectUris),
         JSON.stringify(scopes),
