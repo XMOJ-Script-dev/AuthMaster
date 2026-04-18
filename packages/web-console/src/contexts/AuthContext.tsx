@@ -6,7 +6,11 @@ interface AuthContextType {
   user: UserPublic | null;
   token: string | null;
   login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string, accountType: 'user' | 'merchant') => Promise<void>;
+  register: (
+    email: string,
+    password: string,
+    accountType: 'user' | 'merchant'
+  ) => Promise<{ pendingReview: boolean }>;
   logout: () => void;
   isAuthenticated: boolean;
 }
@@ -77,9 +81,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const register = async (email: string, password: string, accountType: 'user' | 'merchant') => {
-    await api.register(email, password, accountType);
+    const created = await api.register(email, password, accountType);
+    if (created.status === 'pending') {
+      return { pendingReview: true };
+    }
+
     // Auto-login after registration
     await login(email, password);
+    return { pendingReview: false };
   };
 
   const logout = () => {

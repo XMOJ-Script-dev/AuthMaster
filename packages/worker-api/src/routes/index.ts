@@ -23,6 +23,7 @@ import {
   adminListUsersQuerySchema,
   adminUpdateUserRoleSchema,
   adminUpdateUserStatusSchema,
+  adminUpdateSystemSettingsSchema,
   adminListApplicationsQuerySchema,
   adminUpdateAppBlockSchema,
   adminUpdateAppWarningSchema,
@@ -408,6 +409,60 @@ export function setupRoutes(router: Router): void {
         },
         HTTP_STATUS.OK
       );
+    } catch (error: any) {
+      return jsonResponse({ error: error.message }, HTTP_STATUS.BAD_REQUEST);
+    }
+  });
+
+  router.add('GET', '/api/v1/admin/system-settings', async (request, env) => {
+    const authResult = await requireAuth(request, env);
+    if (!isAuthContext(authResult)) {
+      return authResult;
+    }
+
+    const adminError = requireAdmin(authResult);
+    if (adminError) {
+      return adminError;
+    }
+
+    try {
+      const db = new Database(env.DB);
+      const settings = await db.getSystemSettings();
+      return jsonResponse({ settings }, HTTP_STATUS.OK);
+    } catch (error: any) {
+      return jsonResponse({ error: error.message }, HTTP_STATUS.BAD_REQUEST);
+    }
+  });
+
+  router.add('PATCH', '/api/v1/admin/system-settings', async (request, env) => {
+    const authResult = await requireAuth(request, env);
+    if (!isAuthContext(authResult)) {
+      return authResult;
+    }
+
+    const adminError = requireAdmin(authResult);
+    if (adminError) {
+      return adminError;
+    }
+
+    try {
+      const body = await request.json();
+      const input = adminUpdateSystemSettingsSchema.parse(body);
+      const db = new Database(env.DB);
+      const settings = await db.updateSystemSettings(input);
+
+      await db.createAuditLog({
+        actor_user_id: authResult.userId,
+        actor_role: authResult.role,
+        action: 'system.settings.update',
+        target_type: 'user',
+        target_id: authResult.userId,
+        reason: 'system.settings.update',
+        after_data: settings as unknown as Record<string, unknown>,
+        ...getAdminRequestMeta(request),
+      });
+
+      return jsonResponse({ settings }, HTTP_STATUS.OK);
     } catch (error: any) {
       return jsonResponse({ error: error.message }, HTTP_STATUS.BAD_REQUEST);
     }

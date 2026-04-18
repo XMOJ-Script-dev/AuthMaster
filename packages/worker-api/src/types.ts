@@ -12,5 +12,5 @@ export interface AuthContext {
   userId: string;
   email: string;
   role: 'user' | 'merchant' | 'admin';
-  status: 'active' | 'disabled';
+  status: 'active' | 'disabled' | 'pending';
 }

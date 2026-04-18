@@ -27,6 +27,9 @@ export const createApplicationSchema = z.object({
   description: z.string().max(1000).optional(),
   creator_name: z.string().min(1).max(100),
   publisher_website: z.string().url().max(255).optional(),
+  privacy_policy_url: z.string().url().max(255).optional(),
+  children_policy_url: z.string().url().max(255).optional(),
+  terms_of_service_url: z.string().url().max(255).optional(),
   is_official: z.boolean().optional(),
   redirect_uris: z.array(z.string().url()).min(1).max(10),
   scopes: z.array(z.string()).min(1).max(20),
@@ -37,6 +40,9 @@ export const updateApplicationSchema = z.object({
   description: z.string().max(1000).optional(),
   creator_name: z.string().min(1).max(100).optional(),
   publisher_website: z.string().url().max(255).optional(),
+  privacy_policy_url: z.string().url().max(255).optional(),
+  children_policy_url: z.string().url().max(255).optional(),
+  terms_of_service_url: z.string().url().max(255).optional(),
   is_official: z.boolean().optional(),
   redirect_uris: z.array(z.string().url()).min(1).max(10),
   scopes: z.array(z.string()).min(1).max(20),
@@ -95,7 +101,7 @@ export const adminListUsersQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(100).default(50),
   offset: z.coerce.number().int().min(0).default(0),
   role: z.enum(['user', 'merchant', 'admin']).optional(),
-  status: z.enum(['active', 'disabled']).optional(),
+  status: z.enum(['active', 'disabled', 'pending']).optional(),
   email: z.string().min(1).max(255).optional(),
 });
 
@@ -106,6 +112,11 @@ export const adminUpdateUserRoleSchema = z.object({
 export const adminUpdateUserStatusSchema = z.object({
   status: z.enum(['active', 'disabled']),
   reason: z.string().min(1).max(500).optional(),
+});
+
+export const adminUpdateSystemSettingsSchema = z.object({
+  allow_merchant_registration: z.boolean().optional(),
+  merchant_registration_requires_review: z.boolean().optional(),
 });
 
 export const adminListApplicationsQuerySchema = z.object({
@@ -137,6 +148,7 @@ export const adminListAuditLogsQuerySchema = z.object({
     .enum([
       'user.role.update',
       'user.status.update',
+      'system.settings.update',
       'app.block.update',
       'app.warning.update',
       'app.delete',
@@ -160,6 +172,7 @@ export type BindXmojInput = z.infer<typeof bindXmojSchema>;
 export type AdminListUsersQueryInput = z.infer<typeof adminListUsersQuerySchema>;
 export type AdminUpdateUserRoleInput = z.infer<typeof adminUpdateUserRoleSchema>;
 export type AdminUpdateUserStatusInput = z.infer<typeof adminUpdateUserStatusSchema>;
+export type AdminUpdateSystemSettingsInput = z.infer<typeof adminUpdateSystemSettingsSchema>;
 export type AdminListApplicationsQueryInput = z.infer<typeof adminListApplicationsQuerySchema>;
 export type AdminUpdateAppBlockInput = z.infer<typeof adminUpdateAppBlockSchema>;
 export type AdminUpdateAppWarningInput = z.infer<typeof adminUpdateAppWarningSchema>;

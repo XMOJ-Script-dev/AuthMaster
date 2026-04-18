@@ -119,6 +119,12 @@ export function AuthorizePage() {
   }
 
   const scopes = scope?.split(' ') || [];
+  const legalLinks = [
+    { key: 'privacy', label: t('authorize.privacyPolicy'), url: application.privacy_policy_url },
+    { key: 'children', label: t('authorize.childrenPolicy'), url: application.children_policy_url },
+    { key: 'terms', label: t('authorize.termsOfService'), url: application.terms_of_service_url },
+  ].filter(item => !!item.url);
+
   const getScopeLabel = (scopeName: string) => {
     const knownScopes = ['openid', 'profile', 'email', 'xmoj_profile', 'read', 'write'];
     if (knownScopes.includes(scopeName)) {
@@ -128,70 +134,86 @@ export function AuthorizePage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4">
-      <div className="max-w-md w-full">
-        {/* Header */}
-        <div className="text-center mb-6">
-          <div className="bg-white rounded-lg shadow-sm p-4 mb-4">
-            <div className="text-4xl mb-2">🔐</div>
-            <h1 className="text-2xl font-bold text-gray-900">{application.name}</h1>
-            <div className="mt-2 flex justify-center gap-2">
-              {application.is_official && (
-                <span className="px-2 py-1 rounded-full text-xs bg-purple-100 text-purple-800">
-                  {t('applications.badges.official')}
-                </span>
-              )}
-              {application.validation_status === 'validated' && (
-                <span className="px-2 py-1 rounded-full text-xs bg-green-100 text-green-800">
-                  {t('applications.badges.validated')}
-                </span>
-              )}
+    <div className="min-h-screen bg-gray-100 flex items-center justify-center py-12 px-4">
+      <div className="w-full max-w-xl">
+        <div className="bg-white border border-gray-300 rounded-xl shadow-sm overflow-hidden">
+          <div className="px-8 py-6 border-b border-gray-200 bg-gray-50">
+            <p className="text-xs uppercase tracking-wide text-gray-500 mb-3">AuthMaster OAuth</p>
+            <div className="flex items-start gap-4">
+              <div className="h-12 w-12 rounded-lg bg-gray-900 text-white flex items-center justify-center text-lg font-semibold">
+                {application.name?.slice(0, 1)?.toUpperCase() || 'A'}
+              </div>
+              <div className="min-w-0">
+                <h1 className="text-2xl font-semibold text-gray-900 truncate">{application.name}</h1>
+                <p className="text-sm text-gray-600 mt-1">
+                  <span className="font-medium">{application.name}</span> {t('authorize.requesting')}
+                </p>
+                <p className="text-xs text-gray-500 mt-1">{user?.email}</p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {application.is_official && (
+                    <span className="px-2 py-1 rounded-full text-xs bg-purple-100 text-purple-800">
+                      {t('applications.badges.official')}
+                    </span>
+                  )}
+                  {application.validation_status === 'validated' && (
+                    <span className="px-2 py-1 rounded-full text-xs bg-green-100 text-green-800">
+                      {t('applications.badges.validated')}
+                    </span>
+                  )}
+                </div>
+              </div>
             </div>
             {application.description && (
-              <p className="text-sm text-gray-600 mt-1">{application.description}</p>
+              <p className="text-sm text-gray-700 mt-4">{application.description}</p>
             )}
           </div>
-        </div>
 
-        {/* Authorization Card */}
-        <div className="bg-white rounded-lg shadow-lg border-2 border-gray-200">
-          <div className="p-6 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-900 mb-2">
-              {t('authorize.title')}
-            </h2>
-            <p className="text-sm text-gray-600">
-              <span className="font-semibold">{application.name}</span> {t('authorize.requesting')}
-            </p>
-            <div className="mt-3 flex items-center gap-2 text-sm text-gray-600">
-              <span className="font-medium">{user?.email}</span>
-            </div>
-          </div>
-
-          <div className="p-6">
-            <h3 className="text-sm font-semibold text-gray-900 mb-3">
-              {t('authorize.permissions')}
-            </h3>
+          <div className="px-8 py-6">
+            <h2 className="text-sm font-semibold text-gray-900 mb-3">{t('authorize.permissions')}</h2>
             <ul className="space-y-2">
               {scopes.map((s, index) => (
-                <li key={index} className="flex items-start gap-2 text-sm">
-                  <span className="text-green-600 font-bold">✓</span>
-                  <span className="text-gray-700">{getScopeLabel(s)}</span>
+                <li key={index} className="flex items-start gap-2 text-sm text-gray-700">
+                  <span className="text-green-700">✓</span>
+                  <span>{getScopeLabel(s)}</span>
                 </li>
               ))}
               {scopes.length === 0 && (
-                <li className="flex items-start gap-2 text-sm">
-                  <span className="text-green-600 font-bold">✓</span>
-                  <span className="text-gray-700">{t('scopes.openid')}</span>
+                <li className="flex items-start gap-2 text-sm text-gray-700">
+                  <span className="text-green-700">✓</span>
+                  <span>{t('scopes.openid')}</span>
                 </li>
               )}
             </ul>
 
-            <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
-              <p className="text-xs text-blue-800">
+            <div className="mt-5 p-3 bg-gray-50 border border-gray-200 rounded-lg">
+              <p className="text-xs text-gray-700">
                 <strong>{t('authorize.redirectingTo')}</strong>
                 <br />
                 <span className="font-mono break-all">{redirectUri}</span>
               </p>
+            </div>
+
+            <div className="mt-5 p-4 bg-gray-50 border border-gray-200 rounded-lg">
+              <h3 className="text-xs font-semibold text-gray-900 uppercase tracking-wide mb-2">
+                {t('authorize.publisherPolicies')}
+              </h3>
+              {legalLinks.length > 0 ? (
+                <div className="flex flex-wrap gap-4 text-sm">
+                  {legalLinks.map((link) => (
+                    <a
+                      key={link.key}
+                      href={link.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-blue-600 hover:text-blue-800 hover:underline"
+                    >
+                      {link.label}
+                    </a>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-gray-500">{t('authorize.noPublisherPolicies')}</p>
+              )}
             </div>
 
             {error && (
@@ -201,29 +223,25 @@ export function AuthorizePage() {
             )}
           </div>
 
-          <div className="p-6 bg-gray-50 border-t border-gray-200 flex gap-3">
+          <div className="px-8 py-5 border-t border-gray-200 bg-gray-50 flex gap-3">
             <button
               onClick={handleDeny}
               disabled={authorizing}
-              className="flex-1 bg-white border-2 border-gray-300 text-gray-700 py-2 px-4 rounded-md font-semibold hover:bg-gray-50 disabled:opacity-50"
+              className="flex-1 bg-white border border-gray-300 text-gray-700 py-2 px-4 rounded-md font-semibold hover:bg-gray-100 disabled:opacity-50"
             >
               {t('authorize.deny')}
             </button>
             <button
               onClick={handleAuthorize}
               disabled={authorizing}
-              className="flex-1 bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-md font-semibold disabled:opacity-50"
+              className="flex-1 bg-gray-900 hover:bg-black text-white py-2 px-4 rounded-md font-semibold disabled:opacity-50"
             >
               {authorizing ? t('authorize.authorizing') : t('authorize.approve')}
             </button>
           </div>
         </div>
 
-        <div className="mt-4 text-center">
-          <p className="text-xs text-gray-500">
-            {t('authorize.footer')}
-          </p>
-        </div>
+        <p className="mt-4 text-center text-xs text-gray-500">{t('authorize.footer')}</p>
       </div>
     </div>
   );

@@ -30,6 +30,9 @@ export function ApplicationDetailPage() {
     description: '',
     creator_name: '',
     publisher_website: '',
+    privacy_policy_url: '',
+    children_policy_url: '',
+    terms_of_service_url: '',
     is_official: false,
     submission_note: '',
     redirect_uris: '',
@@ -55,6 +58,9 @@ export function ApplicationDetailPage() {
         description: data.description || '',
         creator_name: data.creator_name || '',
         publisher_website: data.publisher_website || '',
+        privacy_policy_url: data.privacy_policy_url || '',
+        children_policy_url: data.children_policy_url || '',
+        terms_of_service_url: data.terms_of_service_url || '',
         is_official: !!data.is_official,
         submission_note: '',
         redirect_uris: (data.redirect_uris || []).join(', '),
@@ -109,6 +115,9 @@ export function ApplicationDetailPage() {
         description: formData.description || undefined,
         creator_name: formData.creator_name || undefined,
         publisher_website: formData.publisher_website || undefined,
+        privacy_policy_url: formData.privacy_policy_url || undefined,
+        children_policy_url: formData.children_policy_url || undefined,
+        terms_of_service_url: formData.terms_of_service_url || undefined,
         is_official: isAdmin ? formData.is_official : undefined,
         submission_note: formData.submission_note || undefined,
         redirect_uris: formData.redirect_uris.split(',').map(s => s.trim()).filter(Boolean),
@@ -263,6 +272,48 @@ export function ApplicationDetailPage() {
                   value={formData.publisher_website}
                   onChange={(e) => setFormData({ ...formData, publisher_website: e.target.value })}
                   placeholder={t('applications.form.publisherWebsitePlaceholder')}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="edit-app-privacy-policy-url" className="block text-sm font-medium text-gray-700 mb-2">
+                  {t('applications.form.privacyPolicyUrl')}
+                </label>
+                <input
+                  id="edit-app-privacy-policy-url"
+                  type="url"
+                  value={formData.privacy_policy_url}
+                  onChange={(e) => setFormData({ ...formData, privacy_policy_url: e.target.value })}
+                  placeholder={t('applications.form.privacyPolicyUrlPlaceholder')}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="edit-app-children-policy-url" className="block text-sm font-medium text-gray-700 mb-2">
+                  {t('applications.form.childrenPolicyUrl')}
+                </label>
+                <input
+                  id="edit-app-children-policy-url"
+                  type="url"
+                  value={formData.children_policy_url}
+                  onChange={(e) => setFormData({ ...formData, children_policy_url: e.target.value })}
+                  placeholder={t('applications.form.childrenPolicyUrlPlaceholder')}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="edit-app-terms-of-service-url" className="block text-sm font-medium text-gray-700 mb-2">
+                  {t('applications.form.termsOfServiceUrl')}
+                </label>
+                <input
+                  id="edit-app-terms-of-service-url"
+                  type="url"
+                  value={formData.terms_of_service_url}
+                  onChange={(e) => setFormData({ ...formData, terms_of_service_url: e.target.value })}
+                  placeholder={t('applications.form.termsOfServiceUrlPlaceholder')}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
@@ -561,6 +612,45 @@ export function ApplicationDetailPage() {
               {application.publisher_website ? (
                 <a href={application.publisher_website} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline">
                   {application.publisher_website}
+                </a>
+              ) : (
+                <p className="text-gray-900">-</p>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                {t('applications.privacyPolicy')}
+              </label>
+              {application.privacy_policy_url ? (
+                <a href={application.privacy_policy_url} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline">
+                  {application.privacy_policy_url}
+                </a>
+              ) : (
+                <p className="text-gray-900">-</p>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                {t('applications.childrenPolicy')}
+              </label>
+              {application.children_policy_url ? (
+                <a href={application.children_policy_url} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline">
+                  {application.children_policy_url}
+                </a>
+              ) : (
+                <p className="text-gray-900">-</p>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                {t('applications.termsOfService')}
+              </label>
+              {application.terms_of_service_url ? (
+                <a href={application.terms_of_service_url} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline">
+                  {application.terms_of_service_url}
                 </a>
               ) : (
                 <p className="text-gray-900">-</p>

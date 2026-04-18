@@ -20,6 +20,9 @@ export function ApplicationsPage() {
     description: '',
     creator_name: '',
     publisher_website: '',
+    privacy_policy_url: '',
+    children_policy_url: '',
+    terms_of_service_url: '',
     is_official: false,
     redirect_uris: '',
     custom_scopes: '',
@@ -70,6 +73,9 @@ export function ApplicationsPage() {
         description: formData.description || undefined,
         creator_name: formData.creator_name,
         publisher_website: formData.publisher_website || undefined,
+        privacy_policy_url: formData.privacy_policy_url || undefined,
+        children_policy_url: formData.children_policy_url || undefined,
+        terms_of_service_url: formData.terms_of_service_url || undefined,
         is_official: user?.role === 'admin' ? formData.is_official : undefined,
         redirect_uris: formData.redirect_uris.split(',').map(s => s.trim()),
         scopes: scopedValues,
@@ -81,6 +87,9 @@ export function ApplicationsPage() {
         description: '',
         creator_name: '',
         publisher_website: '',
+        privacy_policy_url: '',
+        children_policy_url: '',
+        terms_of_service_url: '',
         is_official: false,
         redirect_uris: '',
         custom_scopes: '',
@@ -253,6 +262,48 @@ export function ApplicationsPage() {
                 value={formData.publisher_website}
                 onChange={(e) => setFormData({ ...formData, publisher_website: e.target.value })}
                 placeholder={t('applications.form.publisherWebsitePlaceholder')}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="app-privacy-policy-url" className="block text-sm font-medium text-gray-700 mb-2">
+                {t('applications.form.privacyPolicyUrl')}
+              </label>
+              <input
+                id="app-privacy-policy-url"
+                type="url"
+                value={formData.privacy_policy_url}
+                onChange={(e) => setFormData({ ...formData, privacy_policy_url: e.target.value })}
+                placeholder={t('applications.form.privacyPolicyUrlPlaceholder')}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="app-children-policy-url" className="block text-sm font-medium text-gray-700 mb-2">
+                {t('applications.form.childrenPolicyUrl')}
+              </label>
+              <input
+                id="app-children-policy-url"
+                type="url"
+                value={formData.children_policy_url}
+                onChange={(e) => setFormData({ ...formData, children_policy_url: e.target.value })}
+                placeholder={t('applications.form.childrenPolicyUrlPlaceholder')}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="app-terms-of-service-url" className="block text-sm font-medium text-gray-700 mb-2">
+                {t('applications.form.termsOfServiceUrl')}
+              </label>
+              <input
+                id="app-terms-of-service-url"
+                type="url"
+                value={formData.terms_of_service_url}
+                onChange={(e) => setFormData({ ...formData, terms_of_service_url: e.target.value })}
+                placeholder={t('applications.form.termsOfServiceUrlPlaceholder')}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>

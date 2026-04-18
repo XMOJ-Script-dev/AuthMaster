@@ -18,11 +18,19 @@ export class AuthService {
       throw new Error('User already exists');
     }
 
+    const settings = await this.db.getSystemSettings();
+    if (input.account_type === 'merchant' && !settings.allow_merchant_registration) {
+      throw new Error('Merchant registration is currently disabled');
+    }
+
+    const initialStatus =
+      input.account_type === 'merchant' && settings.merchant_registration_requires_review ? 'pending' : 'active';
+
     // Hash password
     const passwordHash = await hashPassword(input.password);
 
     // Create user
-    const user = await this.db.createUser(input.email, passwordHash, input.account_type);
+    const user = await this.db.createUser(input.email, passwordHash, input.account_type, initialStatus);
 
     return {
       id: user.id,
@@ -38,6 +46,14 @@ export class AuthService {
     const user = await this.db.getUserByEmail(input.email);
     if (!user) {
       throw new Error('Invalid credentials');
+    }
+
+    if (user.status === 'pending') {
+      throw new Error('Merchant account is pending review');
+    }
+
+    if (user.status === 'disabled') {
+      throw new Error('Account is disabled');
     }
 
     // Verify password

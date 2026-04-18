@@ -20,6 +20,9 @@ export interface ApplicationItem {
   description?: string;
   creator_name?: string;
   publisher_website?: string;
+  privacy_policy_url?: string;
+  children_policy_url?: string;
+  terms_of_service_url?: string;
   is_official?: boolean;
   validation_status?: AppValidationStatus;
   validation_submitted_at?: string;
@@ -45,7 +48,7 @@ export interface AppChangeRequestItem {
 }
 
 export type AdminAccountRole = 'user' | 'merchant' | 'admin';
-export type AdminAccountStatus = 'active' | 'disabled';
+export type AdminAccountStatus = 'active' | 'disabled' | 'pending';
 
 export interface AdminUserListItem {
   id: string;
@@ -69,6 +72,9 @@ export interface AdminApplicationListItem {
   description?: string;
   creator_name: string;
   publisher_website?: string;
+  privacy_policy_url?: string;
+  children_policy_url?: string;
+  terms_of_service_url?: string;
   is_official: boolean;
   validation_status: AppValidationStatus;
   validation_submitted_at?: string;
@@ -96,6 +102,7 @@ export interface AdminApplicationsResponse {
 export type AdminAuditAction =
   | 'user.role.update'
   | 'user.status.update'
+  | 'system.settings.update'
   | 'app.block.update'
   | 'app.warning.update'
   | 'app.delete'
@@ -122,6 +129,12 @@ export interface AdminAuditLogsResponse {
   total: number;
   limit: number;
   offset: number;
+}
+
+export interface AdminSystemSettings {
+  allow_merchant_registration: boolean;
+  merchant_registration_requires_review: boolean;
+  updated_at: string;
 }
 
 class ApiClient {
@@ -169,10 +182,13 @@ class ApiClient {
 
   // Auth endpoints
   async register(email: string, password: string, accountType: 'user' | 'merchant') {
-    return this.request('/api/v1/auth/register', {
+    return this.request<{ id: string; email: string; role: 'user' | 'merchant' | 'admin'; status: AdminAccountStatus; created_at: string }>(
+      '/api/v1/auth/register',
+      {
       method: 'POST',
       body: JSON.stringify({ email, password, account_type: accountType }),
-    });
+      }
+    );
   }
 
   async login(email: string, password: string) {
@@ -207,6 +223,9 @@ class ApiClient {
     description?: string;
     creator_name: string;
     publisher_website?: string;
+    privacy_policy_url?: string;
+    children_policy_url?: string;
+    terms_of_service_url?: string;
     is_official?: boolean;
     redirect_uris: string[];
     scopes: string[];
@@ -248,6 +267,9 @@ class ApiClient {
       description?: string;
       creator_name?: string;
       publisher_website?: string;
+      privacy_policy_url?: string;
+      children_policy_url?: string;
+      terms_of_service_url?: string;
       is_official?: boolean;
       redirect_uris: string[];
       scopes: string[];
@@ -344,6 +366,22 @@ class ApiClient {
     const suffix = searchParams.toString() ? `?${searchParams.toString()}` : '';
     return this.request<AdminUserListResponse>(`/api/v1/admin/users${suffix}`, {
       method: 'GET',
+    });
+  }
+
+  async getAdminSystemSettings() {
+    return this.request<{ settings: AdminSystemSettings }>('/api/v1/admin/system-settings', {
+      method: 'GET',
+    });
+  }
+
+  async updateAdminSystemSettings(input: {
+    allow_merchant_registration?: boolean;
+    merchant_registration_requires_review?: boolean;
+  }) {
+    return this.request<{ settings: AdminSystemSettings }>('/api/v1/admin/system-settings', {
+      method: 'PATCH',
+      body: JSON.stringify(input),
     });
   }
 

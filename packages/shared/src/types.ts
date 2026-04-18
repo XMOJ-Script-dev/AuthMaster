@@ -1,8 +1,14 @@
 // User types
 export type AccountRole = 'user' | 'merchant' | 'admin';
-export type AccountStatus = 'active' | 'disabled';
+export type AccountStatus = 'active' | 'disabled' | 'pending';
 export type AppValidationStatus = 'unverified' | 'pending' | 'validated' | 'rejected';
 export type AppChangeRequestStatus = 'pending' | 'approved' | 'rejected';
+
+export interface SystemSettings {
+  allow_merchant_registration: boolean;
+  merchant_registration_requires_review: boolean;
+  updated_at: string;
+}
 
 export interface User {
   id: string;
@@ -62,6 +68,9 @@ export interface AdminApplicationListItem {
   description?: string;
   creator_name: string;
   publisher_website?: string;
+  privacy_policy_url?: string;
+  children_policy_url?: string;
+  terms_of_service_url?: string;
   is_official: boolean;
   validation_status: AppValidationStatus;
   validation_submitted_at?: string;
@@ -89,6 +98,7 @@ export interface AdminListApplicationsResponse {
 export type AdminAuditAction =
   | 'user.role.update'
   | 'user.status.update'
+  | 'system.settings.update'
   | 'app.block.update'
   | 'app.warning.update'
   | 'app.delete'
@@ -127,6 +137,9 @@ export interface Application {
   description?: string;
   creator_name?: string;
   publisher_website?: string;
+  privacy_policy_url?: string;
+  children_policy_url?: string;
+  terms_of_service_url?: string;
   is_official?: boolean;
   validation_status?: AppValidationStatus;
   validation_submission?: string;
@@ -152,6 +165,9 @@ export interface ApplicationPublic {
   description?: string;
   creator_name?: string;
   publisher_website?: string;
+  privacy_policy_url?: string;
+  children_policy_url?: string;
+  terms_of_service_url?: string;
   is_official?: boolean;
   validation_status?: AppValidationStatus;
   validation_submitted_at?: string;
@@ -257,6 +273,9 @@ export interface CreateApplicationRequest {
   description?: string;
   creator_name: string;
   publisher_website?: string;
+  privacy_policy_url?: string;
+  children_policy_url?: string;
+  terms_of_service_url?: string;
   is_official?: boolean;
   redirect_uris: string[];
   scopes: string[];

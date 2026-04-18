@@ -1,5 +1,6 @@
 import {
   User,
+  SystemSettings,
   Application,
   Authorization,
   OAuthToken,
@@ -25,18 +26,19 @@ export class Database {
   async createUser(
     email: string,
     passwordHash: string,
-    accountType: 'user' | 'merchant'
+    accountType: 'user' | 'merchant',
+    status: AccountStatus = 'active'
   ): Promise<User> {
     const id = crypto.randomUUID();
     const now = new Date().toISOString();
     const role = accountType;
-    const status = 'active';
+    const initialStatus = status;
 
     await this.db
       .prepare(
         'INSERT INTO users (id, email, password_hash, role, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)'
       )
-      .bind(id, email, passwordHash, role, status, now, now)
+      .bind(id, email, passwordHash, role, initialStatus, now, now)
       .run();
 
     return {
@@ -44,8 +46,73 @@ export class Database {
       email,
       password_hash: passwordHash,
       role,
-      status,
+      status: initialStatus,
       created_at: now,
+      updated_at: now,
+    };
+  }
+
+  async getSystemSettings(): Promise<SystemSettings> {
+    const result = await this.db
+      .prepare(
+        `SELECT allow_merchant_registration, merchant_registration_requires_review, updated_at
+         FROM system_settings
+         WHERE id = 1`
+      )
+      .first<any>();
+
+    if (!result) {
+      const now = new Date().toISOString();
+      await this.db
+        .prepare(
+          `INSERT INTO system_settings (
+            id,
+            allow_merchant_registration,
+            merchant_registration_requires_review,
+            updated_at
+          ) VALUES (1, 1, 0, ?)`
+        )
+        .bind(now)
+        .run();
+
+      return {
+        allow_merchant_registration: true,
+        merchant_registration_requires_review: false,
+        updated_at: now,
+      };
+    }
+
+    return {
+      allow_merchant_registration: !!result.allow_merchant_registration,
+      merchant_registration_requires_review: !!result.merchant_registration_requires_review,
+      updated_at: result.updated_at,
+    };
+  }
+
+  async updateSystemSettings(input: {
+    allow_merchant_registration?: boolean;
+    merchant_registration_requires_review?: boolean;
+  }): Promise<SystemSettings> {
+    const current = await this.getSystemSettings();
+    const now = new Date().toISOString();
+    const nextAllow = input.allow_merchant_registration ?? current.allow_merchant_registration;
+    const nextReview =
+      input.merchant_registration_requires_review ?? current.merchant_registration_requires_review;
+
+    await this.db
+      .prepare(
+        `UPDATE system_settings
+         SET allow_merchant_registration = ?,
+             merchant_registration_requires_review = ?,
+             updated_at = ?
+         WHERE id = 1`
+      )
+      .bind(nextAllow ? 1 : 0, nextReview ? 1 : 0, now)
+      .run();
+
+    return {
+      allow_merchant_registration: nextAllow,
+      merchant_registration_requires_review: nextReview,
       updated_at: now,
     };
   }
@@ -253,6 +320,9 @@ export class Database {
     description: string | undefined,
     creatorName: string,
     publisherWebsite: string | undefined,
+    privacyPolicyUrl: string | undefined,
+    childrenPolicyUrl: string | undefined,
+    termsOfServiceUrl: string | undefined,
     isOfficial: boolean,
     redirectUris: string[],
     scopes: string[]
@@ -271,13 +341,16 @@ export class Database {
           description,
           creator_name,
           publisher_website,
+          privacy_policy_url,
+          children_policy_url,
+          terms_of_service_url,
           is_official,
           validation_status,
           redirect_uris,
           scopes,
           created_at,
           updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
       )
       .bind(
         id,
@@ -288,6 +361,9 @@ export class Database {
         description || null,
         creatorName,
         publisherWebsite || null,
+        privacyPolicyUrl || null,
+        childrenPolicyUrl || null,
+        termsOfServiceUrl || null,
         isOfficial ? 1 : 0,
         isOfficial ? 'validated' : 'unverified',
         JSON.stringify(redirectUris),
@@ -306,6 +382,9 @@ export class Database {
       description,
       creator_name: creatorName,
       publisher_website: publisherWebsite,
+      privacy_policy_url: privacyPolicyUrl,
+      children_policy_url: childrenPolicyUrl,
+      terms_of_service_url: termsOfServiceUrl,
       is_official: isOfficial,
       validation_status: isOfficial ? 'validated' : 'unverified',
       validation_submission: undefined,
@@ -337,6 +416,9 @@ export class Database {
       ...result,
       creator_name: result.creator_name || result.name,
       publisher_website: result.publisher_website || undefined,
+      privacy_policy_url: result.privacy_policy_url || undefined,
+      children_policy_url: result.children_policy_url || undefined,
+      terms_of_service_url: result.terms_of_service_url || undefined,
       is_official: !!result.is_official,
       validation_status: (result.validation_status || 'unverified') as AppValidationStatus,
       validation_submission: result.validation_submission || undefined,
@@ -364,6 +446,9 @@ export class Database {
       ...app,
       creator_name: app.creator_name || app.name,
       publisher_website: app.publisher_website || undefined,
+      privacy_policy_url: app.privacy_policy_url || undefined,
+      children_policy_url: app.children_policy_url || undefined,
+      terms_of_service_url: app.terms_of_service_url || undefined,
       is_official: !!app.is_official,
       validation_status: (app.validation_status || 'unverified') as AppValidationStatus,
       validation_submission: app.validation_submission || undefined,
@@ -402,6 +487,9 @@ export class Database {
       ...result,
       creator_name: result.creator_name || result.name,
       publisher_website: result.publisher_website || undefined,
+      privacy_policy_url: result.privacy_policy_url || undefined,
+      children_policy_url: result.children_policy_url || undefined,
+      terms_of_service_url: result.terms_of_service_url || undefined,
       is_official: !!result.is_official,
       validation_status: (result.validation_status || 'unverified') as AppValidationStatus,
       validation_submission: result.validation_submission || undefined,
@@ -466,6 +554,9 @@ export class Database {
         app.description,
         app.creator_name,
         app.publisher_website,
+        app.privacy_policy_url,
+        app.children_policy_url,
+        app.terms_of_service_url,
         app.is_official,
         app.validation_status,
         app.validation_submitted_at,
@@ -512,6 +603,9 @@ export class Database {
         description: app.description || undefined,
         creator_name: app.creator_name || app.name,
         publisher_website: app.publisher_website || undefined,
+        privacy_policy_url: app.privacy_policy_url || undefined,
+        children_policy_url: app.children_policy_url || undefined,
+        terms_of_service_url: app.terms_of_service_url || undefined,
         is_official: !!app.is_official,
         validation_status: (app.validation_status || 'unverified') as AppValidationStatus,
         validation_submitted_at: app.validation_submitted_at || undefined,
@@ -687,6 +781,9 @@ export class Database {
     description: string | undefined,
     creatorName: string | undefined,
     publisherWebsite: string | undefined,
+    privacyPolicyUrl: string | undefined,
+    childrenPolicyUrl: string | undefined,
+    termsOfServiceUrl: string | undefined,
     isOfficial: boolean | undefined,
     redirectUris: string[],
     scopes: string[]
@@ -700,6 +797,9 @@ export class Database {
              description = ?,
              creator_name = COALESCE(?, creator_name),
              publisher_website = COALESCE(?, publisher_website),
+             privacy_policy_url = COALESCE(?, privacy_policy_url),
+             children_policy_url = COALESCE(?, children_policy_url),
+             terms_of_service_url = COALESCE(?, terms_of_service_url),
              is_official = COALESCE(?, is_official),
              redirect_uris = ?,
              scopes = ?,
@@ -711,6 +811,9 @@ export class Database {
         description || null,
         creatorName || null,
         publisherWebsite || null,
+        privacyPolicyUrl || null,
+        childrenPolicyUrl || null,
+        termsOfServiceUrl || null,
         typeof isOfficial === 'boolean' ? (isOfficial ? 1 : 0) : null,
         JSON.stringify(redirectUris),
         JSON.stringify(scopes),

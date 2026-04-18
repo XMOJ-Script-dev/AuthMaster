@@ -14,6 +14,7 @@ import { ChangePasswordPage } from './pages/ChangePasswordPage';
 import { AdminDashboardPage } from './pages/AdminDashboardPage';
 import { AdminPendingAppsPage } from './pages/AdminPendingAppsPage';
 import { AdminUsersPage } from './pages/AdminUsersPage';
+import { AdminSystemSettingsPage } from './pages/AdminSystemSettingsPage';
 
 function App() {
   return (
@@ -55,6 +56,14 @@ function App() {
               element={
                 <ProtectedRoute allowedRoles={['admin']}>
                   <AdminUsersPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/settings"
+              element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <AdminSystemSettingsPage />
                 </ProtectedRoute>
               }
             />

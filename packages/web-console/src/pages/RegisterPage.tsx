@@ -31,7 +31,11 @@ export function RegisterPage() {
     setLoading(true);
 
     try {
-      await register(email, password, accountType);
+      const result = await register(email, password, accountType);
+      if (result.pendingReview) {
+        navigate('/login');
+        return;
+      }
       navigate('/dashboard');
     } catch (err: any) {
       setError(err.message || t('auth.register.failed'));
