@@ -38,6 +38,22 @@ export interface XmojBindingPublic {
   created_at: string;
 }
 
+export interface AdminUserListItem {
+  id: string;
+  email: string;
+  role: AccountRole;
+  status: AccountStatus;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AdminListUsersResponse {
+  users: AdminUserListItem[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
 // Application types
 export interface Application {
   id: string;

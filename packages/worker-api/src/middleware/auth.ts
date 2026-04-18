@@ -38,3 +38,7 @@ export function requireRole(auth: AuthContext, roles: Array<'user' | 'merchant' 
 
   return null;
 }
+
+export function requireAdmin(auth: AuthContext): Response | null {
+  return requireRole(auth, ['admin']);
+}

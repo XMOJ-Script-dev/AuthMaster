@@ -58,6 +58,23 @@ export const bindXmojSchema = z.object({
   bind_method: z.enum(['bookmark', 'manual']),
 });
 
+export const adminListUsersQuerySchema = z.object({
+  limit: z.coerce.number().int().min(1).max(100).default(50),
+  offset: z.coerce.number().int().min(0).default(0),
+  role: z.enum(['user', 'merchant', 'admin']).optional(),
+  status: z.enum(['active', 'disabled']).optional(),
+  email: z.string().min(1).max(255).optional(),
+});
+
+export const adminUpdateUserRoleSchema = z.object({
+  role: z.enum(['user', 'merchant', 'admin']),
+});
+
+export const adminUpdateUserStatusSchema = z.object({
+  status: z.enum(['active', 'disabled']),
+  reason: z.string().min(1).max(500).optional(),
+});
+
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
 export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
@@ -67,3 +84,6 @@ export type UpdateApplicationInput = z.infer<typeof updateApplicationSchema>;
 export type AuthorizeInput = z.infer<typeof authorizeSchema>;
 export type TokenInput = z.infer<typeof tokenSchema>;
 export type BindXmojInput = z.infer<typeof bindXmojSchema>;
+export type AdminListUsersQueryInput = z.infer<typeof adminListUsersQuerySchema>;
+export type AdminUpdateUserRoleInput = z.infer<typeof adminUpdateUserRoleSchema>;
+export type AdminUpdateUserStatusInput = z.infer<typeof adminUpdateUserStatusSchema>;

@@ -1,4 +1,15 @@
-import { User, Application, Authorization, OAuthToken, APIUsage, XmojBinding, UserAuthorizationApp } from '@authmaster/shared';
+import {
+  User,
+  Application,
+  Authorization,
+  OAuthToken,
+  APIUsage,
+  XmojBinding,
+  UserAuthorizationApp,
+  AccountRole,
+  AccountStatus,
+  AdminUserListItem,
+} from '@authmaster/shared';
 import { Env } from '../types';
 
 export class Database {
@@ -72,6 +83,93 @@ export class Database {
     await this.db
       .prepare('UPDATE users SET password_hash = ?, updated_at = ? WHERE id = ?')
       .bind(passwordHash, now, userId)
+      .run();
+  }
+
+  async listUsers(options: {
+    limit: number;
+    offset: number;
+    role?: AccountRole;
+    status?: AccountStatus;
+    email?: string;
+  }): Promise<{ users: AdminUserListItem[]; total: number }> {
+    const whereClauses: string[] = [];
+    const whereBindings: any[] = [];
+
+    if (options.role) {
+      whereClauses.push('role = ?');
+      whereBindings.push(options.role);
+    }
+
+    if (options.status) {
+      whereClauses.push('status = ?');
+      whereBindings.push(options.status);
+    }
+
+    if (options.email) {
+      whereClauses.push('email LIKE ?');
+      whereBindings.push(`%${options.email}%`);
+    }
+
+    const whereSql = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
+
+    const listSql = `
+      SELECT id, email, role, status, created_at, updated_at
+      FROM users
+      ${whereSql}
+      ORDER BY created_at DESC
+      LIMIT ? OFFSET ?
+    `;
+
+    const listResults = await this.db
+      .prepare(listSql)
+      .bind(...whereBindings, options.limit, options.offset)
+      .all<any>();
+
+    const countSql = `
+      SELECT COUNT(*) AS total
+      FROM users
+      ${whereSql}
+    `;
+
+    const countResult = await this.db
+      .prepare(countSql)
+      .bind(...whereBindings)
+      .first<{ total: number | string }>();
+
+    return {
+      users: listResults.results.map(user => ({
+        id: user.id,
+        email: user.email,
+        role: user.role || 'merchant',
+        status: user.status || 'active',
+        created_at: user.created_at,
+        updated_at: user.updated_at,
+      })),
+      total: Number(countResult?.total || 0),
+    };
+  }
+
+  async updateUserRole(userId: string, role: AccountRole): Promise<void> {
+    const now = new Date().toISOString();
+    await this.db
+      .prepare('UPDATE users SET role = ?, updated_at = ? WHERE id = ?')
+      .bind(role, now, userId)
+      .run();
+  }
+
+  async updateUserStatus(userId: string, status: AccountStatus): Promise<void> {
+    const now = new Date().toISOString();
+    await this.db
+      .prepare('UPDATE users SET status = ?, updated_at = ? WHERE id = ?')
+      .bind(status, now, userId)
+      .run();
+  }
+
+  async revokeAllUserTokens(userId: string): Promise<void> {
+    await this.db
+      .prepare('DELETE FROM oauth_tokens WHERE user_id = ?')
+      .bind(userId)
       .run();
   }
 

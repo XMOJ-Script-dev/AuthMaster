@@ -4,7 +4,8 @@ import { AuthService } from '../services/auth';
 import { AppService } from '../services/app';
 import { OAuthService } from '../services/oauth';
 import { XmojService } from '../services/xmoj';
-import { requireAuth, isAuthContext, requireRole } from '../middleware/auth';
+import { requireAuth, isAuthContext, requireRole, requireAdmin } from '../middleware/auth';
+import { Database } from '../services/database';
 import {
   registerSchema,
   loginSchema,
@@ -15,6 +16,9 @@ import {
   authorizeSchema,
   tokenSchema,
   bindXmojSchema,
+  adminListUsersQuerySchema,
+  adminUpdateUserRoleSchema,
+  adminUpdateUserStatusSchema,
   HTTP_STATUS,
 } from '@authmaster/shared';
 
@@ -137,7 +141,7 @@ export function setupRoutes(router: Router): void {
 
     try {
       const appService = new AppService(env);
-      const app = await appService.getApplication(params.appId);
+      const app = await appService.getApplicationByViewer(params.appId, authResult.userId, authResult.role);
 
       if (!app) {
         return jsonResponse({ error: 'Application not found' }, HTTP_STATUS.NOT_FOUND);
@@ -145,6 +149,9 @@ export function setupRoutes(router: Router): void {
 
       return jsonResponse(app, HTTP_STATUS.OK);
     } catch (error: any) {
+      if (error?.message === 'Forbidden') {
+        return jsonResponse({ error: 'Forbidden' }, HTTP_STATUS.FORBIDDEN);
+      }
       return jsonResponse({ error: error.message }, HTTP_STATUS.BAD_REQUEST);
     }
   });
@@ -162,7 +169,7 @@ export function setupRoutes(router: Router): void {
 
     try {
       const appService = new AppService(env);
-      await appService.deleteApplication(params.appId, authResult.userId);
+      await appService.deleteApplication(params.appId, authResult.userId, authResult.role);
 
       return jsonResponse({ message: 'Application deleted successfully' }, HTTP_STATUS.OK);
     } catch (error: any) {
@@ -186,9 +193,121 @@ export function setupRoutes(router: Router): void {
       const input = updateApplicationSchema.parse(body);
 
       const appService = new AppService(env);
-      const app = await appService.updateApplication(params.appId, authResult.userId, input);
+      const app = await appService.updateApplication(params.appId, authResult.userId, authResult.role, input);
 
       return jsonResponse(app, HTTP_STATUS.OK);
+    } catch (error: any) {
+      return jsonResponse({ error: error.message }, HTTP_STATUS.BAD_REQUEST);
+    }
+  });
+
+  // Admin routes (system management)
+  router.add('GET', '/api/v1/admin/users', async (request, env) => {
+    const authResult = await requireAuth(request, env);
+    if (!isAuthContext(authResult)) {
+      return authResult;
+    }
+
+    const adminError = requireAdmin(authResult);
+    if (adminError) {
+      return adminError;
+    }
+
+    try {
+      const url = new URL(request.url);
+      const query = adminListUsersQuerySchema.parse(Object.fromEntries(url.searchParams.entries()));
+      const db = new Database(env.DB);
+      const result = await db.listUsers(query);
+
+      return jsonResponse(
+        {
+          users: result.users,
+          total: result.total,
+          limit: query.limit,
+          offset: query.offset,
+        },
+        HTTP_STATUS.OK
+      );
+    } catch (error: any) {
+      return jsonResponse({ error: error.message }, HTTP_STATUS.BAD_REQUEST);
+    }
+  });
+
+  router.add('PATCH', '/api/v1/admin/users/:userId/role', async (request, env, params) => {
+    const authResult = await requireAuth(request, env);
+    if (!isAuthContext(authResult)) {
+      return authResult;
+    }
+
+    const adminError = requireAdmin(authResult);
+    if (adminError) {
+      return adminError;
+    }
+
+    try {
+      const body = await request.json();
+      const input = adminUpdateUserRoleSchema.parse(body);
+      const db = new Database(env.DB);
+      const targetUser = await db.getUserById(params.userId);
+
+      if (!targetUser) {
+        return jsonResponse({ error: 'User not found' }, HTTP_STATUS.NOT_FOUND);
+      }
+
+      if (authResult.userId === params.userId && input.role !== 'admin') {
+        return jsonResponse({ error: 'Admin cannot remove own admin role' }, HTTP_STATUS.BAD_REQUEST);
+      }
+
+      await db.updateUserRole(params.userId, input.role);
+      const updatedUser = await db.getUserById(params.userId);
+
+      return jsonResponse({ user: updatedUser }, HTTP_STATUS.OK);
+    } catch (error: any) {
+      return jsonResponse({ error: error.message }, HTTP_STATUS.BAD_REQUEST);
+    }
+  });
+
+  router.add('PATCH', '/api/v1/admin/users/:userId/status', async (request, env, params) => {
+    const authResult = await requireAuth(request, env);
+    if (!isAuthContext(authResult)) {
+      return authResult;
+    }
+
+    const adminError = requireAdmin(authResult);
+    if (adminError) {
+      return adminError;
+    }
+
+    try {
+      const body = await request.json();
+      const input = adminUpdateUserStatusSchema.parse(body);
+      const db = new Database(env.DB);
+      const targetUser = await db.getUserById(params.userId);
+
+      if (!targetUser) {
+        return jsonResponse({ error: 'User not found' }, HTTP_STATUS.NOT_FOUND);
+      }
+
+      if (authResult.userId === params.userId && input.status !== 'active') {
+        return jsonResponse({ error: 'Admin cannot disable own account' }, HTTP_STATUS.BAD_REQUEST);
+      }
+
+      await db.updateUserStatus(params.userId, input.status);
+
+      if (input.status === 'disabled') {
+        await db.revokeAllUserTokens(params.userId);
+      }
+
+      const updatedUser = await db.getUserById(params.userId);
+
+      return jsonResponse(
+        {
+          user: updatedUser,
+          reason: input.reason,
+          tokens_revoked: input.status === 'disabled',
+        },
+        HTTP_STATUS.OK
+      );
     } catch (error: any) {
       return jsonResponse({ error: error.message }, HTTP_STATUS.BAD_REQUEST);
     }

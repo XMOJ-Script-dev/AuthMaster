@@ -51,7 +51,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(prev => ({
           id: payload.sub,
           email: payload.email,
-          role: payload.role || prev?.role || 'merchant',
+          // Use least-privilege fallback to avoid accidentally exposing merchant-only UI.
+          role: payload.role || prev?.role || 'user',
           status: payload.status || prev?.status || 'active',
           created_at: prev?.created_at || new Date(0).toISOString(),
         }));

@@ -4,6 +4,7 @@ import {
   CreateApplicationResponse,
   ApplicationPublic,
   Application,
+  AccountRole,
 } from '@authmaster/shared';
 import { Env } from '../types';
 import { Database } from './database';
@@ -48,6 +49,19 @@ export class AppService {
     return this.toPublic(app);
   }
 
+  async getApplicationByViewer(appId: string, viewerId: string, viewerRole: AccountRole): Promise<ApplicationPublic | null> {
+    const app = await this.db.getApplicationByAppId(appId);
+    if (!app) {
+      return null;
+    }
+
+    if (!this.canManageApplication(app.user_id, viewerId, viewerRole)) {
+      throw new Error('Forbidden');
+    }
+
+    return this.toPublic(app);
+  }
+
   async getUserApplications(userId: string): Promise<ApplicationPublic[]> {
     const apps = await this.db.getApplicationsByUserId(userId);
     return apps.map(app => this.toPublic(app));
@@ -66,26 +80,31 @@ export class AppService {
     return app;
   }
 
-  async deleteApplication(appId: string, userId: string): Promise<void> {
+  async deleteApplication(appId: string, userId: string, userRole: AccountRole): Promise<void> {
     const app = await this.db.getApplicationByAppId(appId);
     if (!app) {
       throw new Error('Application not found');
     }
 
-    if (app.user_id !== userId) {
+    if (!this.canManageApplication(app.user_id, userId, userRole)) {
       throw new Error('Unauthorized');
     }
 
     await this.db.deleteApplication(appId);
   }
 
-  async updateApplication(appId: string, userId: string, input: UpdateApplicationInput): Promise<ApplicationPublic> {
+  async updateApplication(
+    appId: string,
+    userId: string,
+    userRole: AccountRole,
+    input: UpdateApplicationInput
+  ): Promise<ApplicationPublic> {
     const app = await this.db.getApplicationByAppId(appId);
     if (!app) {
       throw new Error('Application not found');
     }
 
-    if (app.user_id !== userId) {
+    if (!this.canManageApplication(app.user_id, userId, userRole)) {
       throw new Error('Unauthorized');
     }
 
@@ -102,6 +121,13 @@ export class AppService {
     }
 
     return this.toPublic(updated);
+  }
+
+  private canManageApplication(ownerUserId: string, actorUserId: string, actorRole: AccountRole): boolean {
+    if (actorRole === 'admin') {
+      return true;
+    }
+    return ownerUserId === actorUserId;
   }
 
   private toPublic(app: Application): ApplicationPublic {
