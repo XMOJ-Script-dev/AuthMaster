@@ -10,6 +10,7 @@ const SCOPE_OPTIONS = ['openid', 'profile', 'email', 'xmoj_profile', 'read', 'wr
 export function ApplicationsPage() {
   const { t } = useTranslation();
   const { user } = useAuth();
+  const isAdmin = user?.role === 'admin';
   const canManageApps = user?.role === 'merchant' || user?.role === 'admin';
   const [applications, setApplications] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -29,12 +30,19 @@ export function ApplicationsPage() {
 
   useEffect(() => {
     loadApplications();
-  }, []);
+  }, [user?.role]);
 
   const loadApplications = async () => {
+    setLoading(true);
+    setError('');
     try {
-      const data = await api.getApplications();
-      setApplications(data as any[]);
+      if (isAdmin) {
+        const data = await api.getAdminApplications({ limit: 100, offset: 0 });
+        setApplications(data.applications as any[]);
+      } else {
+        const data = await api.getApplications();
+        setApplications(data as any[]);
+      }
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -85,7 +93,11 @@ export function ApplicationsPage() {
     if (!deleteConfirm) return;
 
     try {
-      await api.deleteApplication(deleteConfirm);
+      if (isAdmin) {
+        await api.deleteAdminApplication(deleteConfirm);
+      } else {
+        await api.deleteApplication(deleteConfirm);
+      }
       setDeleteConfirm(null);
       loadApplications();
     } catch (err: any) {

@@ -10,7 +10,7 @@ export function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const role = user?.role;
   const isAdmin = role === 'admin';
-  const canManageApps = role === 'merchant';
+  const canManageApps = role === 'merchant' || role === 'admin';
   const canBindXmoj = role === 'user' || role === undefined;
   const displayName = useMemo(() => {
     if (!user?.email) {
