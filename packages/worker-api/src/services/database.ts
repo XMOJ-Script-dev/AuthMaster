@@ -9,6 +9,9 @@ import {
   AccountRole,
   AccountStatus,
   AdminUserListItem,
+  AdminApplicationListItem,
+  AdminAuditAction,
+  AdminAuditLogItem,
 } from '@authmaster/shared';
 import { Env } from '../types';
 
@@ -278,6 +281,11 @@ export class Database {
       description,
       redirect_uris: redirectUris,
       scopes,
+      is_blocked: false,
+      blocked_reason: undefined,
+      blocked_at: undefined,
+      warning_message: undefined,
+      warning_at: undefined,
       created_at: now,
       updated_at: now,
     };
@@ -295,6 +303,11 @@ export class Database {
       ...result,
       redirect_uris: JSON.parse(result.redirect_uris),
       scopes: JSON.parse(result.scopes),
+      is_blocked: !!result.is_blocked,
+      blocked_reason: result.blocked_reason || undefined,
+      blocked_at: result.blocked_at || undefined,
+      warning_message: result.warning_message || undefined,
+      warning_at: result.warning_at || undefined,
     };
   }
 
@@ -308,7 +321,285 @@ export class Database {
       ...app,
       redirect_uris: JSON.parse(app.redirect_uris),
       scopes: JSON.parse(app.scopes),
+      is_blocked: !!app.is_blocked,
+      blocked_reason: app.blocked_reason || undefined,
+      blocked_at: app.blocked_at || undefined,
+      warning_message: app.warning_message || undefined,
+      warning_at: app.warning_at || undefined,
     }));
+  }
+
+  async getApplicationByAppIdWithOwner(appId: string): Promise<(Application & { owner_email: string }) | null> {
+    const result = await this.db
+      .prepare(
+        `SELECT
+          app.*,
+          usr.email AS owner_email
+        FROM applications app
+        INNER JOIN users usr ON usr.id = app.user_id
+        WHERE app.app_id = ?`
+      )
+      .bind(appId)
+      .first<any>();
+
+    if (!result) {
+      return null;
+    }
+
+    return {
+      ...result,
+      redirect_uris: JSON.parse(result.redirect_uris),
+      scopes: JSON.parse(result.scopes),
+      is_blocked: !!result.is_blocked,
+      blocked_reason: result.blocked_reason || undefined,
+      blocked_at: result.blocked_at || undefined,
+      warning_message: result.warning_message || undefined,
+      warning_at: result.warning_at || undefined,
+      owner_email: result.owner_email,
+    };
+  }
+
+  async listApplicationsForAdmin(options: {
+    limit: number;
+    offset: number;
+    owner_email?: string;
+    app_id?: string;
+    name?: string;
+    is_blocked?: boolean;
+  }): Promise<{ applications: AdminApplicationListItem[]; total: number }> {
+    const whereClauses: string[] = [];
+    const whereBindings: any[] = [];
+
+    if (options.owner_email) {
+      whereClauses.push('usr.email LIKE ?');
+      whereBindings.push(`%${options.owner_email}%`);
+    }
+
+    if (options.app_id) {
+      whereClauses.push('app.app_id LIKE ?');
+      whereBindings.push(`%${options.app_id}%`);
+    }
+
+    if (options.name) {
+      whereClauses.push('app.name LIKE ?');
+      whereBindings.push(`%${options.name}%`);
+    }
+
+    if (typeof options.is_blocked === 'boolean') {
+      whereClauses.push('app.is_blocked = ?');
+      whereBindings.push(options.is_blocked ? 1 : 0);
+    }
+
+    const whereSql = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
+
+    const listSql = `
+      SELECT
+        app.app_id,
+        app.name,
+        app.description,
+        app.user_id AS owner_user_id,
+        usr.email AS owner_email,
+        app.redirect_uris,
+        app.scopes,
+        app.is_blocked,
+        app.blocked_reason,
+        app.blocked_at,
+        app.warning_message,
+        app.warning_at,
+        app.created_at,
+        app.updated_at
+      FROM applications app
+      INNER JOIN users usr ON usr.id = app.user_id
+      ${whereSql}
+      ORDER BY app.created_at DESC
+      LIMIT ? OFFSET ?
+    `;
+
+    const listResults = await this.db
+      .prepare(listSql)
+      .bind(...whereBindings, options.limit, options.offset)
+      .all<any>();
+
+    const countSql = `
+      SELECT COUNT(*) AS total
+      FROM applications app
+      INNER JOIN users usr ON usr.id = app.user_id
+      ${whereSql}
+    `;
+
+    const countResult = await this.db
+      .prepare(countSql)
+      .bind(...whereBindings)
+      .first<{ total: number | string }>();
+
+    return {
+      applications: listResults.results.map(app => ({
+        app_id: app.app_id,
+        name: app.name,
+        description: app.description || undefined,
+        owner_user_id: app.owner_user_id,
+        owner_email: app.owner_email,
+        redirect_uris: JSON.parse(app.redirect_uris),
+        scopes: JSON.parse(app.scopes),
+        is_blocked: !!app.is_blocked,
+        blocked_reason: app.blocked_reason || undefined,
+        blocked_at: app.blocked_at || undefined,
+        warning_message: app.warning_message || undefined,
+        warning_at: app.warning_at || undefined,
+        created_at: app.created_at,
+        updated_at: app.updated_at,
+      })),
+      total: Number(countResult?.total || 0),
+    };
+  }
+
+  async updateApplicationBlockStatus(appId: string, isBlocked: boolean, reason?: string): Promise<void> {
+    const now = new Date().toISOString();
+    const blockedReason = isBlocked ? reason || null : null;
+    const blockedAt = isBlocked ? now : null;
+
+    await this.db
+      .prepare(
+        'UPDATE applications SET is_blocked = ?, blocked_reason = ?, blocked_at = ?, updated_at = ? WHERE app_id = ?'
+      )
+      .bind(isBlocked ? 1 : 0, blockedReason, blockedAt, now, appId)
+      .run();
+  }
+
+  async updateApplicationWarning(appId: string, warningMessage?: string): Promise<void> {
+    const now = new Date().toISOString();
+    const nextMessage = warningMessage || null;
+    const warningAt = warningMessage ? now : null;
+
+    await this.db
+      .prepare('UPDATE applications SET warning_message = ?, warning_at = ?, updated_at = ? WHERE app_id = ?')
+      .bind(nextMessage, warningAt, now, appId)
+      .run();
+  }
+
+  async createAuditLog(input: {
+    actor_user_id: string;
+    actor_role: AccountRole;
+    action: AdminAuditAction;
+    target_type: 'user' | 'application';
+    target_id: string;
+    reason?: string;
+    before_data?: Record<string, unknown>;
+    after_data?: Record<string, unknown>;
+    ip_address?: string;
+    user_agent?: string;
+  }): Promise<void> {
+    const id = crypto.randomUUID();
+    const now = new Date().toISOString();
+
+    await this.db
+      .prepare(
+        `INSERT INTO audit_logs (
+          id,
+          actor_user_id,
+          actor_role,
+          action,
+          target_type,
+          target_id,
+          reason,
+          before_data,
+          after_data,
+          ip_address,
+          user_agent,
+          created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      )
+      .bind(
+        id,
+        input.actor_user_id,
+        input.actor_role,
+        input.action,
+        input.target_type,
+        input.target_id,
+        input.reason || null,
+        input.before_data ? JSON.stringify(input.before_data) : null,
+        input.after_data ? JSON.stringify(input.after_data) : null,
+        input.ip_address || null,
+        input.user_agent || null,
+        now
+      )
+      .run();
+  }
+
+  async listAuditLogsForAdmin(options: {
+    limit: number;
+    offset: number;
+    actor_user_id?: string;
+    target_type?: 'user' | 'application';
+    target_id?: string;
+    action?: AdminAuditAction;
+  }): Promise<{ logs: AdminAuditLogItem[]; total: number }> {
+    const whereClauses: string[] = [];
+    const whereBindings: any[] = [];
+
+    if (options.actor_user_id) {
+      whereClauses.push('actor_user_id = ?');
+      whereBindings.push(options.actor_user_id);
+    }
+
+    if (options.target_type) {
+      whereClauses.push('target_type = ?');
+      whereBindings.push(options.target_type);
+    }
+
+    if (options.target_id) {
+      whereClauses.push('target_id = ?');
+      whereBindings.push(options.target_id);
+    }
+
+    if (options.action) {
+      whereClauses.push('action = ?');
+      whereBindings.push(options.action);
+    }
+
+    const whereSql = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
+
+    const listSql = `
+      SELECT *
+      FROM audit_logs
+      ${whereSql}
+      ORDER BY created_at DESC
+      LIMIT ? OFFSET ?
+    `;
+
+    const listResults = await this.db
+      .prepare(listSql)
+      .bind(...whereBindings, options.limit, options.offset)
+      .all<any>();
+
+    const countSql = `
+      SELECT COUNT(*) AS total
+      FROM audit_logs
+      ${whereSql}
+    `;
+
+    const countResult = await this.db
+      .prepare(countSql)
+      .bind(...whereBindings)
+      .first<{ total: number | string }>();
+
+    return {
+      logs: listResults.results.map(log => ({
+        id: log.id,
+        actor_user_id: log.actor_user_id,
+        actor_role: log.actor_role,
+        action: log.action,
+        target_type: log.target_type,
+        target_id: log.target_id,
+        reason: log.reason || undefined,
+        before_data: log.before_data ? JSON.parse(log.before_data) : undefined,
+        after_data: log.after_data ? JSON.parse(log.after_data) : undefined,
+        ip_address: log.ip_address || undefined,
+        user_agent: log.user_agent || undefined,
+        created_at: log.created_at,
+      })),
+      total: Number(countResult?.total || 0),
+    };
   }
 
   async updateApplication(

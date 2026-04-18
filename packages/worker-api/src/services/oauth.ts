@@ -29,6 +29,10 @@ export class OAuthService {
       throw new Error(ERROR_CODES.INVALID_CLIENT);
     }
 
+    if (app.is_blocked) {
+      throw new Error(ERROR_CODES.INVALID_CLIENT);
+    }
+
     // Verify redirect URI
     if (!app.redirect_uris.includes(input.redirect_uri)) {
       throw new Error(ERROR_CODES.INVALID_REQUEST);
@@ -75,6 +79,10 @@ export class OAuthService {
     // Verify application
     const app = await this.appService.verifyApplication(input.client_id, input.client_secret);
     if (!app) {
+      throw new Error(ERROR_CODES.INVALID_CLIENT);
+    }
+
+    if (app.is_blocked) {
       throw new Error(ERROR_CODES.INVALID_CLIENT);
     }
 

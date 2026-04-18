@@ -10,6 +10,78 @@ export interface AuthorizedAppItem {
   active_tokens: number;
 }
 
+export type AdminAccountRole = 'user' | 'merchant' | 'admin';
+export type AdminAccountStatus = 'active' | 'disabled';
+
+export interface AdminUserListItem {
+  id: string;
+  email: string;
+  role: AdminAccountRole;
+  status: AdminAccountStatus;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AdminUserListResponse {
+  users: AdminUserListItem[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
+export interface AdminApplicationListItem {
+  app_id: string;
+  name: string;
+  description?: string;
+  owner_user_id: string;
+  owner_email: string;
+  redirect_uris: string[];
+  scopes: string[];
+  is_blocked: boolean;
+  blocked_reason?: string;
+  blocked_at?: string;
+  warning_message?: string;
+  warning_at?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AdminApplicationsResponse {
+  applications: AdminApplicationListItem[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
+export type AdminAuditAction =
+  | 'user.role.update'
+  | 'user.status.update'
+  | 'app.block.update'
+  | 'app.warning.update'
+  | 'app.delete';
+
+export interface AdminAuditLogItem {
+  id: string;
+  actor_user_id: string;
+  actor_role: AdminAccountRole;
+  action: AdminAuditAction;
+  target_type: 'user' | 'application';
+  target_id: string;
+  reason?: string;
+  before_data?: Record<string, unknown>;
+  after_data?: Record<string, unknown>;
+  ip_address?: string;
+  user_agent?: string;
+  created_at: string;
+}
+
+export interface AdminAuditLogsResponse {
+  logs: AdminAuditLogItem[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
 class ApiClient {
   private token: string | null = null;
 
@@ -169,6 +241,141 @@ class ApiClient {
   async revokeMyAuthorization(appId: string) {
     return this.request<{ message: string }>(`/api/v1/me/authorizations/${appId}`, {
       method: 'DELETE',
+    });
+  }
+
+  async getAdminUsers(params?: {
+    limit?: number;
+    offset?: number;
+    role?: AdminAccountRole;
+    status?: AdminAccountStatus;
+    email?: string;
+  }) {
+    const searchParams = new URLSearchParams();
+    if (params?.limit !== undefined) {
+      searchParams.set('limit', String(params.limit));
+    }
+    if (params?.offset !== undefined) {
+      searchParams.set('offset', String(params.offset));
+    }
+    if (params?.role) {
+      searchParams.set('role', params.role);
+    }
+    if (params?.status) {
+      searchParams.set('status', params.status);
+    }
+    if (params?.email) {
+      searchParams.set('email', params.email);
+    }
+
+    const suffix = searchParams.toString() ? `?${searchParams.toString()}` : '';
+    return this.request<AdminUserListResponse>(`/api/v1/admin/users${suffix}`, {
+      method: 'GET',
+    });
+  }
+
+  async updateAdminUserRole(userId: string, role: AdminAccountRole) {
+    return this.request<{ user: AdminUserListItem }>(`/api/v1/admin/users/${userId}/role`, {
+      method: 'PATCH',
+      body: JSON.stringify({ role }),
+    });
+  }
+
+  async updateAdminUserStatus(userId: string, status: AdminAccountStatus, reason?: string) {
+    return this.request<{ user: AdminUserListItem; reason?: string; tokens_revoked: boolean }>(
+      `/api/v1/admin/users/${userId}/status`,
+      {
+        method: 'PATCH',
+        body: JSON.stringify({ status, reason }),
+      }
+    );
+  }
+
+  async getAdminApplications(params?: {
+    limit?: number;
+    offset?: number;
+    owner_email?: string;
+    app_id?: string;
+    name?: string;
+    is_blocked?: boolean;
+  }) {
+    const searchParams = new URLSearchParams();
+    if (params?.limit !== undefined) {
+      searchParams.set('limit', String(params.limit));
+    }
+    if (params?.offset !== undefined) {
+      searchParams.set('offset', String(params.offset));
+    }
+    if (params?.owner_email) {
+      searchParams.set('owner_email', params.owner_email);
+    }
+    if (params?.app_id) {
+      searchParams.set('app_id', params.app_id);
+    }
+    if (params?.name) {
+      searchParams.set('name', params.name);
+    }
+    if (params?.is_blocked !== undefined) {
+      searchParams.set('is_blocked', String(params.is_blocked));
+    }
+
+    const suffix = searchParams.toString() ? `?${searchParams.toString()}` : '';
+    return this.request<AdminApplicationsResponse>(`/api/v1/admin/apps${suffix}`, {
+      method: 'GET',
+    });
+  }
+
+  async updateAdminApplicationBlock(appId: string, is_blocked: boolean, reason?: string) {
+    return this.request<{ application: AdminApplicationListItem | null }>(`/api/v1/admin/apps/${appId}/block`, {
+      method: 'PATCH',
+      body: JSON.stringify({ is_blocked, reason }),
+    });
+  }
+
+  async updateAdminApplicationWarning(appId: string, warning_message?: string) {
+    return this.request<{ application: AdminApplicationListItem | null }>(`/api/v1/admin/apps/${appId}/warning`, {
+      method: 'PATCH',
+      body: JSON.stringify({ warning_message }),
+    });
+  }
+
+  async deleteAdminApplication(appId: string) {
+    return this.request<{ message: string }>(`/api/v1/admin/apps/${appId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async getAdminAuditLogs(params?: {
+    limit?: number;
+    offset?: number;
+    actor_user_id?: string;
+    target_type?: 'user' | 'application';
+    target_id?: string;
+    action?: AdminAuditAction;
+  }) {
+    const searchParams = new URLSearchParams();
+    if (params?.limit !== undefined) {
+      searchParams.set('limit', String(params.limit));
+    }
+    if (params?.offset !== undefined) {
+      searchParams.set('offset', String(params.offset));
+    }
+    if (params?.actor_user_id) {
+      searchParams.set('actor_user_id', params.actor_user_id);
+    }
+    if (params?.target_type) {
+      searchParams.set('target_type', params.target_type);
+    }
+    if (params?.target_id) {
+      searchParams.set('target_id', params.target_id);
+    }
+    if (params?.action) {
+      searchParams.set('action', params.action);
+    }
+
+    const suffix = searchParams.toString() ? `?${searchParams.toString()}` : '';
+    return this.request<AdminAuditLogsResponse>(`/api/v1/admin/audit-logs${suffix}`, {
+      method: 'GET',
     });
   }
 

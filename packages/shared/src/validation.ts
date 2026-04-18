@@ -75,6 +75,41 @@ export const adminUpdateUserStatusSchema = z.object({
   reason: z.string().min(1).max(500).optional(),
 });
 
+export const adminListApplicationsQuerySchema = z.object({
+  limit: z.coerce.number().int().min(1).max(100).default(50),
+  offset: z.coerce.number().int().min(0).default(0),
+  owner_email: z.string().min(1).max(255).optional(),
+  app_id: z.string().min(1).max(255).optional(),
+  name: z.string().min(1).max(255).optional(),
+  is_blocked: z.coerce.boolean().optional(),
+});
+
+export const adminUpdateAppBlockSchema = z.object({
+  is_blocked: z.boolean(),
+  reason: z.string().min(1).max(500).optional(),
+});
+
+export const adminUpdateAppWarningSchema = z.object({
+  warning_message: z.string().min(1).max(500).optional(),
+});
+
+export const adminListAuditLogsQuerySchema = z.object({
+  limit: z.coerce.number().int().min(1).max(100).default(50),
+  offset: z.coerce.number().int().min(0).default(0),
+  actor_user_id: z.string().min(1).max(255).optional(),
+  target_type: z.enum(['user', 'application']).optional(),
+  target_id: z.string().min(1).max(255).optional(),
+  action: z
+    .enum([
+      'user.role.update',
+      'user.status.update',
+      'app.block.update',
+      'app.warning.update',
+      'app.delete',
+    ])
+    .optional(),
+});
+
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
 export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
@@ -87,3 +122,7 @@ export type BindXmojInput = z.infer<typeof bindXmojSchema>;
 export type AdminListUsersQueryInput = z.infer<typeof adminListUsersQuerySchema>;
 export type AdminUpdateUserRoleInput = z.infer<typeof adminUpdateUserRoleSchema>;
 export type AdminUpdateUserStatusInput = z.infer<typeof adminUpdateUserStatusSchema>;
+export type AdminListApplicationsQueryInput = z.infer<typeof adminListApplicationsQuerySchema>;
+export type AdminUpdateAppBlockInput = z.infer<typeof adminUpdateAppBlockSchema>;
+export type AdminUpdateAppWarningInput = z.infer<typeof adminUpdateAppWarningSchema>;
+export type AdminListAuditLogsQueryInput = z.infer<typeof adminListAuditLogsQuerySchema>;

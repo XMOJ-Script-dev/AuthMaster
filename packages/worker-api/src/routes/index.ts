@@ -19,8 +19,19 @@ import {
   adminListUsersQuerySchema,
   adminUpdateUserRoleSchema,
   adminUpdateUserStatusSchema,
+  adminListApplicationsQuerySchema,
+  adminUpdateAppBlockSchema,
+  adminUpdateAppWarningSchema,
+  adminListAuditLogsQuerySchema,
   HTTP_STATUS,
 } from '@authmaster/shared';
+
+function getAdminRequestMeta(request: Request): { ip_address?: string; user_agent?: string } {
+  return {
+    ip_address: request.headers.get('CF-Connecting-IP') || undefined,
+    user_agent: request.headers.get('User-Agent') || undefined,
+  };
+}
 
 export function setupRoutes(router: Router): void {
   // Health check
@@ -258,8 +269,20 @@ export function setupRoutes(router: Router): void {
         return jsonResponse({ error: 'Admin cannot remove own admin role' }, HTTP_STATUS.BAD_REQUEST);
       }
 
+      const beforeRole = targetUser.role;
       await db.updateUserRole(params.userId, input.role);
       const updatedUser = await db.getUserById(params.userId);
+
+      await db.createAuditLog({
+        actor_user_id: authResult.userId,
+        actor_role: authResult.role,
+        action: 'user.role.update',
+        target_type: 'user',
+        target_id: params.userId,
+        before_data: { role: beforeRole },
+        after_data: { role: input.role },
+        ...getAdminRequestMeta(request),
+      });
 
       return jsonResponse({ user: updatedUser }, HTTP_STATUS.OK);
     } catch (error: any) {
@@ -292,6 +315,7 @@ export function setupRoutes(router: Router): void {
         return jsonResponse({ error: 'Admin cannot disable own account' }, HTTP_STATUS.BAD_REQUEST);
       }
 
+      const beforeStatus = targetUser.status;
       await db.updateUserStatus(params.userId, input.status);
 
       if (input.status === 'disabled') {
@@ -300,11 +324,225 @@ export function setupRoutes(router: Router): void {
 
       const updatedUser = await db.getUserById(params.userId);
 
+      await db.createAuditLog({
+        actor_user_id: authResult.userId,
+        actor_role: authResult.role,
+        action: 'user.status.update',
+        target_type: 'user',
+        target_id: params.userId,
+        reason: input.reason,
+        before_data: { status: beforeStatus },
+        after_data: { status: input.status },
+        ...getAdminRequestMeta(request),
+      });
+
       return jsonResponse(
         {
           user: updatedUser,
           reason: input.reason,
           tokens_revoked: input.status === 'disabled',
+        },
+        HTTP_STATUS.OK
+      );
+    } catch (error: any) {
+      return jsonResponse({ error: error.message }, HTTP_STATUS.BAD_REQUEST);
+    }
+  });
+
+  router.add('GET', '/api/v1/admin/apps', async (request, env) => {
+    const authResult = await requireAuth(request, env);
+    if (!isAuthContext(authResult)) {
+      return authResult;
+    }
+
+    const adminError = requireAdmin(authResult);
+    if (adminError) {
+      return adminError;
+    }
+
+    try {
+      const url = new URL(request.url);
+      const query = adminListApplicationsQuerySchema.parse(Object.fromEntries(url.searchParams.entries()));
+      const db = new Database(env.DB);
+      const result = await db.listApplicationsForAdmin(query);
+
+      return jsonResponse(
+        {
+          applications: result.applications,
+          total: result.total,
+          limit: query.limit,
+          offset: query.offset,
+        },
+        HTTP_STATUS.OK
+      );
+    } catch (error: any) {
+      return jsonResponse({ error: error.message }, HTTP_STATUS.BAD_REQUEST);
+    }
+  });
+
+  router.add('PATCH', '/api/v1/admin/apps/:appId/block', async (request, env, params) => {
+    const authResult = await requireAuth(request, env);
+    if (!isAuthContext(authResult)) {
+      return authResult;
+    }
+
+    const adminError = requireAdmin(authResult);
+    if (adminError) {
+      return adminError;
+    }
+
+    try {
+      const body = await request.json();
+      const input = adminUpdateAppBlockSchema.parse(body);
+      const db = new Database(env.DB);
+      const beforeApp = await db.getApplicationByAppIdWithOwner(params.appId);
+
+      if (!beforeApp) {
+        return jsonResponse({ error: 'Application not found' }, HTTP_STATUS.NOT_FOUND);
+      }
+
+      await db.updateApplicationBlockStatus(params.appId, input.is_blocked, input.reason);
+      const updatedApp = await db.getApplicationByAppIdWithOwner(params.appId);
+
+      await db.createAuditLog({
+        actor_user_id: authResult.userId,
+        actor_role: authResult.role,
+        action: 'app.block.update',
+        target_type: 'application',
+        target_id: params.appId,
+        reason: input.reason,
+        before_data: {
+          is_blocked: beforeApp.is_blocked,
+          blocked_reason: beforeApp.blocked_reason,
+          blocked_at: beforeApp.blocked_at,
+        },
+        after_data: {
+          is_blocked: updatedApp?.is_blocked,
+          blocked_reason: updatedApp?.blocked_reason,
+          blocked_at: updatedApp?.blocked_at,
+        },
+        ...getAdminRequestMeta(request),
+      });
+
+      return jsonResponse({ application: updatedApp }, HTTP_STATUS.OK);
+    } catch (error: any) {
+      return jsonResponse({ error: error.message }, HTTP_STATUS.BAD_REQUEST);
+    }
+  });
+
+  router.add('PATCH', '/api/v1/admin/apps/:appId/warning', async (request, env, params) => {
+    const authResult = await requireAuth(request, env);
+    if (!isAuthContext(authResult)) {
+      return authResult;
+    }
+
+    const adminError = requireAdmin(authResult);
+    if (adminError) {
+      return adminError;
+    }
+
+    try {
+      const body = await request.json();
+      const input = adminUpdateAppWarningSchema.parse(body);
+      const db = new Database(env.DB);
+      const beforeApp = await db.getApplicationByAppIdWithOwner(params.appId);
+
+      if (!beforeApp) {
+        return jsonResponse({ error: 'Application not found' }, HTTP_STATUS.NOT_FOUND);
+      }
+
+      await db.updateApplicationWarning(params.appId, input.warning_message);
+      const updatedApp = await db.getApplicationByAppIdWithOwner(params.appId);
+
+      await db.createAuditLog({
+        actor_user_id: authResult.userId,
+        actor_role: authResult.role,
+        action: 'app.warning.update',
+        target_type: 'application',
+        target_id: params.appId,
+        before_data: {
+          warning_message: beforeApp.warning_message,
+          warning_at: beforeApp.warning_at,
+        },
+        after_data: {
+          warning_message: updatedApp?.warning_message,
+          warning_at: updatedApp?.warning_at,
+        },
+        ...getAdminRequestMeta(request),
+      });
+
+      return jsonResponse({ application: updatedApp }, HTTP_STATUS.OK);
+    } catch (error: any) {
+      return jsonResponse({ error: error.message }, HTTP_STATUS.BAD_REQUEST);
+    }
+  });
+
+  router.add('DELETE', '/api/v1/admin/apps/:appId', async (request, env, params) => {
+    const authResult = await requireAuth(request, env);
+    if (!isAuthContext(authResult)) {
+      return authResult;
+    }
+
+    const adminError = requireAdmin(authResult);
+    if (adminError) {
+      return adminError;
+    }
+
+    try {
+      const db = new Database(env.DB);
+      const beforeApp = await db.getApplicationByAppIdWithOwner(params.appId);
+
+      if (!beforeApp) {
+        return jsonResponse({ error: 'Application not found' }, HTTP_STATUS.NOT_FOUND);
+      }
+
+      const appService = new AppService(env);
+      await appService.deleteApplication(params.appId, authResult.userId, 'admin');
+
+      await db.createAuditLog({
+        actor_user_id: authResult.userId,
+        actor_role: authResult.role,
+        action: 'app.delete',
+        target_type: 'application',
+        target_id: params.appId,
+        before_data: {
+          app_id: beforeApp.app_id,
+          owner_user_id: beforeApp.user_id,
+          owner_email: beforeApp.owner_email,
+          name: beforeApp.name,
+        },
+        ...getAdminRequestMeta(request),
+      });
+
+      return jsonResponse({ message: 'Application deleted successfully' }, HTTP_STATUS.OK);
+    } catch (error: any) {
+      return jsonResponse({ error: error.message }, HTTP_STATUS.BAD_REQUEST);
+    }
+  });
+
+  router.add('GET', '/api/v1/admin/audit-logs', async (request, env) => {
+    const authResult = await requireAuth(request, env);
+    if (!isAuthContext(authResult)) {
+      return authResult;
+    }
+
+    const adminError = requireAdmin(authResult);
+    if (adminError) {
+      return adminError;
+    }
+
+    try {
+      const url = new URL(request.url);
+      const query = adminListAuditLogsQuerySchema.parse(Object.fromEntries(url.searchParams.entries()));
+      const db = new Database(env.DB);
+      const result = await db.listAuditLogsForAdmin(query);
+
+      return jsonResponse(
+        {
+          logs: result.logs,
+          total: result.total,
+          limit: query.limit,
+          offset: query.offset,
         },
         HTTP_STATUS.OK
       );

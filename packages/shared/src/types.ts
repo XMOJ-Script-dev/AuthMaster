@@ -54,6 +54,59 @@ export interface AdminListUsersResponse {
   offset: number;
 }
 
+export interface AdminApplicationListItem {
+  app_id: string;
+  name: string;
+  description?: string;
+  owner_user_id: string;
+  owner_email: string;
+  redirect_uris: string[];
+  scopes: string[];
+  is_blocked: boolean;
+  blocked_reason?: string;
+  blocked_at?: string;
+  warning_message?: string;
+  warning_at?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AdminListApplicationsResponse {
+  applications: AdminApplicationListItem[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
+export type AdminAuditAction =
+  | 'user.role.update'
+  | 'user.status.update'
+  | 'app.block.update'
+  | 'app.warning.update'
+  | 'app.delete';
+
+export interface AdminAuditLogItem {
+  id: string;
+  actor_user_id: string;
+  actor_role: AccountRole;
+  action: AdminAuditAction;
+  target_type: 'user' | 'application';
+  target_id: string;
+  reason?: string;
+  before_data?: Record<string, unknown>;
+  after_data?: Record<string, unknown>;
+  ip_address?: string;
+  user_agent?: string;
+  created_at: string;
+}
+
+export interface AdminListAuditLogsResponse {
+  logs: AdminAuditLogItem[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
 // Application types
 export interface Application {
   id: string;
@@ -64,6 +117,11 @@ export interface Application {
   description?: string;
   redirect_uris: string[];
   scopes: string[];
+  is_blocked?: boolean;
+  blocked_reason?: string;
+  blocked_at?: string;
+  warning_message?: string;
+  warning_at?: string;
   created_at: string;
   updated_at: string;
 }
