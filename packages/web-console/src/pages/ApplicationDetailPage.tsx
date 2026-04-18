@@ -42,6 +42,8 @@ export function ApplicationDetailPage() {
   const frontendBase = window.location.origin.replace(/\/$/, '');
   const backendBase = (import.meta.env.VITE_API_URL || window.location.origin).replace(/\/$/, '');
   const scopeParam = (application?.scopes || ['openid', 'profile', 'email']).join(' ');
+  const validationStatus = application?.validation_status || 'unverified';
+  const canSubmitValidation = !isAdmin && (validationStatus === 'unverified' || validationStatus === 'rejected');
 
   useEffect(() => {
     loadApplication();
@@ -429,10 +431,10 @@ export function ApplicationDetailPage() {
         <div className="bg-white rounded-lg shadow p-6">
           <h2 className="text-xl font-semibold text-gray-900 mb-4">{t('applications.validation.title')}</h2>
           <p className="text-sm text-gray-600 mb-3">
-            {t('applications.validation.currentStatus')}: {application.validation_status || 'unverified'}
+            {t('applications.validation.currentStatus')}: {t(`applications.validation.status.${validationStatus}`)}
           </p>
 
-          {!isAdmin && (
+          {canSubmitValidation && (
             <div className="space-y-3">
               <textarea
                 value={validationContent}
@@ -485,7 +487,7 @@ export function ApplicationDetailPage() {
               {changeRequests.map((request) => (
                 <div key={request.id} className="border border-gray-200 rounded p-4">
                   <p className="text-sm text-gray-600 mb-2">
-                    {t('applications.validation.requestStatus')}: {request.status}
+                    {t('applications.validation.requestStatus')}: {t(`applications.validation.changeRequestStatus.${request.status}`)}
                   </p>
                   {request.submission_note && (
                     <p className="text-sm text-gray-700 mb-2">{request.submission_note}</p>

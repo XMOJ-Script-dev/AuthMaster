@@ -255,6 +255,12 @@
     "validation": {
       "title": "可信认证（Validated）",
       "currentStatus": "可信状态",
+      "status": {
+        "unverified": "未认证",
+        "pending": "审核中",
+        "validated": "已通过认证",
+        "rejected": "未通过认证"
+      },
       "contentPlaceholder": "简单介绍你的应用用途，并提供官网、隐私政策等信息，方便管理员快速审核。",
       "submit": "申请可信认证",
       "approve": "批准",
@@ -267,6 +273,11 @@
       "updatePendingReview": "你的应用已进入可信模式：本次改动已提交管理员审核",
       "changeRequests": "改动审核记录",
       "requestStatus": "审核状态",
+      "changeRequestStatus": {
+        "pending": "待审核",
+        "approved": "已通过",
+        "rejected": "已拒绝"
+      },
       "reviewNotePlaceholder": "填写审核备注（可选）"
     },
     "admin": {

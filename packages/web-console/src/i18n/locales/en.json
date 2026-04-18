@@ -255,6 +255,12 @@
     "validation": {
       "title": "Trusted Verification (Validated)",
       "currentStatus": "Trust status",
+      "status": {
+        "unverified": "Unverified",
+        "pending": "Pending Review",
+        "validated": "Validated",
+        "rejected": "Rejected"
+      },
       "contentPlaceholder": "Briefly describe your app and include website/privacy policy links so admins can review it quickly.",
       "submit": "Request Trusted Verification",
       "approve": "Approve",
@@ -267,6 +273,11 @@
       "updatePendingReview": "Your app is in trusted mode: this update was submitted for admin review",
       "changeRequests": "Change Review History",
       "requestStatus": "Review status",
+      "changeRequestStatus": {
+        "pending": "Pending",
+        "approved": "Approved",
+        "rejected": "Rejected"
+      },
       "reviewNotePlaceholder": "Review note (optional)"
     },
     "admin": {
