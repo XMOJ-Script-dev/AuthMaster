@@ -58,31 +58,31 @@ export function HomePage() {
         </div>
 
         <div className="bg-white rounded-lg shadow-md p-8">
-          <h2 className="text-3xl font-bold text-gray-900 mb-4">Features</h2>
+          <h2 className="text-3xl font-bold text-gray-900 mb-4">{t('home.moreFeatures.title')}</h2>
           <ul className="space-y-3 text-gray-700">
             <li className="flex items-start">
               <span className="text-blue-600 mr-2">✓</span>
-              User registration, login, and password reset
+              {t('home.moreFeatures.item1')}
             </li>
             <li className="flex items-start">
               <span className="text-blue-600 mr-2">✓</span>
-              Third-party application management
+              {t('home.moreFeatures.item2')}
             </li>
             <li className="flex items-start">
               <span className="text-blue-600 mr-2">✓</span>
-              OAuth2 authorization code and client credentials flows
+              {t('home.moreFeatures.item3')}
             </li>
             <li className="flex items-start">
               <span className="text-blue-600 mr-2">✓</span>
-              JWT token generation and validation
+              {t('home.moreFeatures.item4')}
             </li>
             <li className="flex items-start">
               <span className="text-blue-600 mr-2">✓</span>
-              API usage tracking and analytics
+              {t('home.moreFeatures.item5')}
             </li>
             <li className="flex items-start">
               <span className="text-blue-600 mr-2">✓</span>
-              PKCE support for enhanced security
+              {t('home.moreFeatures.item6')}
             </li>
           </ul>
         </div>

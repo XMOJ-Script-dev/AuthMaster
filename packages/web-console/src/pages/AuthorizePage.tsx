@@ -64,7 +64,11 @@ export function AuthorizePage() {
       // Redirect to the application's callback URL
       window.location.href = result.redirect_uri;
     } catch (err: any) {
-      setError(err.message);
+      if (err?.message === 'Only user accounts can authorize applications') {
+        setError(t('authorize.merchantForbidden'));
+      } else {
+        setError(err.message);
+      }
       setAuthorizing(false);
     }
   };
@@ -115,6 +119,13 @@ export function AuthorizePage() {
   }
 
   const scopes = scope?.split(' ') || [];
+  const getScopeLabel = (scopeName: string) => {
+    const knownScopes = ['openid', 'profile', 'email', 'xmoj_profile', 'read', 'write'];
+    if (knownScopes.includes(scopeName)) {
+      return t(`scopes.${scopeName}`);
+    }
+    return t('authorize.customScope', { scope: scopeName });
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4">
@@ -152,27 +163,20 @@ export function AuthorizePage() {
               {scopes.map((s, index) => (
                 <li key={index} className="flex items-start gap-2 text-sm">
                   <span className="text-green-600 font-bold">✓</span>
-                  <span className="text-gray-700">
-                    {s === 'openid' && 'Verify your identity'}
-                    {s === 'profile' && 'Read your profile information'}
-                    {s === 'email' && 'Read your email address'}
-                    {s === 'read' && 'Read your data'}
-                    {s === 'write' && 'Modify your data'}
-                    {!['openid', 'profile', 'email', 'read', 'write'].includes(s) && `Access: ${s}`}
-                  </span>
+                  <span className="text-gray-700">{getScopeLabel(s)}</span>
                 </li>
               ))}
               {scopes.length === 0 && (
                 <li className="flex items-start gap-2 text-sm">
                   <span className="text-green-600 font-bold">✓</span>
-                  <span className="text-gray-700">Verify your identity</span>
+                  <span className="text-gray-700">{t('scopes.openid')}</span>
                 </li>
               )}
             </ul>
 
             <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
               <p className="text-xs text-blue-800">
-                <strong>Redirecting to:</strong>
+                <strong>{t('authorize.redirectingTo')}</strong>
                 <br />
                 <span className="font-mono break-all">{redirectUri}</span>
               </p>
@@ -205,8 +209,7 @@ export function AuthorizePage() {
 
         <div className="mt-4 text-center">
           <p className="text-xs text-gray-500">
-            By authorizing, you allow this application to access your data according to their{' '}
-            <a href="#" className="text-blue-600 hover:underline">terms of service</a>.
+            {t('authorize.footer')}
           </p>
         </div>
       </div>

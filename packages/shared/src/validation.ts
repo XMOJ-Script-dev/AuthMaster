@@ -4,6 +4,7 @@ import { z } from 'zod';
 export const registerSchema = z.object({
   email: z.string().email(),
   password: z.string().min(8).max(128),
+  account_type: z.enum(['user', 'merchant']).default('user'),
 });
 
 export const loginSchema = z.object({
@@ -15,6 +16,11 @@ export const resetPasswordSchema = z.object({
   email: z.string().email(),
 });
 
+export const changePasswordSchema = z.object({
+  current_password: z.string().min(1),
+  new_password: z.string().min(8).max(128),
+});
+
 // Application validation schemas
 export const createApplicationSchema = z.object({
   name: z.string().min(1).max(255),
@@ -22,6 +28,8 @@ export const createApplicationSchema = z.object({
   redirect_uris: z.array(z.string().url()).min(1).max(10),
   scopes: z.array(z.string()).min(1).max(20),
 });
+
+export const updateApplicationSchema = createApplicationSchema;
 
 // OAuth2 validation schemas
 export const authorizeSchema = z.object({
@@ -44,9 +52,18 @@ export const tokenSchema = z.object({
   code_verifier: z.string().optional(),
 });
 
+export const bindXmojSchema = z.object({
+  xmoj_username: z.string().min(1).max(64),
+  phpsessid: z.string().min(16).max(256),
+  bind_method: z.enum(['bookmark', 'manual']),
+});
+
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
 export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
+export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;
 export type CreateApplicationInput = z.infer<typeof createApplicationSchema>;
+export type UpdateApplicationInput = z.infer<typeof updateApplicationSchema>;
 export type AuthorizeInput = z.infer<typeof authorizeSchema>;
 export type TokenInput = z.infer<typeof tokenSchema>;
+export type BindXmojInput = z.infer<typeof bindXmojSchema>;

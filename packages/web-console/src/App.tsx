@@ -9,6 +9,8 @@ import { DashboardPage } from './pages/DashboardPage';
 import { ApplicationsPage } from './pages/ApplicationsPage';
 import { ApplicationDetailPage } from './pages/ApplicationDetailPage';
 import { AuthorizePage } from './pages/AuthorizePage';
+import { XmojBindingPage } from './pages/XmojBindingPage';
+import { ChangePasswordPage } from './pages/ChangePasswordPage';
 
 function App() {
   return (
@@ -42,6 +44,22 @@ function App() {
               element={
                 <ProtectedRoute>
                   <ApplicationDetailPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/xmoj-binding"
+              element={
+                <ProtectedRoute>
+                  <XmojBindingPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/change-password"
+              element={
+                <ProtectedRoute>
+                  <ChangePasswordPage />
                 </ProtectedRoute>
               }
             />

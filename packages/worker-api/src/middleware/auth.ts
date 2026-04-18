@@ -15,12 +15,26 @@ export async function requireAuth(request: Request, env: Env): Promise<AuthConte
     return jsonResponse({ error: 'Invalid token' }, 401);
   }
 
+  if ((payload.status || 'active') !== 'active') {
+    return jsonResponse({ error: 'Account is disabled' }, 403);
+  }
+
   return {
     userId: payload.sub,
     email: payload.email || '',
+    role: payload.role || 'merchant',
+    status: payload.status || 'active',
   };
 }
 
 export function isAuthContext(value: AuthContext | Response): value is AuthContext {
   return 'userId' in value;
+}
+
+export function requireRole(auth: AuthContext, roles: Array<'user' | 'merchant' | 'admin'>): Response | null {
+  if (!roles.includes(auth.role)) {
+    return jsonResponse({ error: 'Forbidden' }, 403);
+  }
+
+  return null;
 }

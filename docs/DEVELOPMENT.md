@@ -49,7 +49,12 @@ JWT_SECRET=your-secret-key-here
 ENCRYPTION_KEY=your-encryption-key-here
 FRONTEND_URL=http://localhost:3000
 ISSUER=http://localhost:8787
+XMOJ_BASE_URL=https://xmoj.tech
 ```
+
+`XMOJ_BASE_URL` is used by XMOJ account binding verification. During bind,
+the backend sends a request with `PHPSESSID` and verifies by parsing the top-right
+profile name from the returned page.
 
 Generate secure random keys:
 

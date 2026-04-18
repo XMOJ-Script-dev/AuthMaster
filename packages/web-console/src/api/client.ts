@@ -1,5 +1,15 @@
 const API_BASE_URL = import.meta.env.VITE_API_URL || '';
 
+export interface AuthorizedAppItem {
+  app_id: string;
+  app_name: string;
+  app_description?: string;
+  scope: string;
+  authorized_at: string;
+  last_used_at?: string;
+  active_tokens: number;
+}
+
 class ApiClient {
   private token: string | null = null;
 
@@ -44,10 +54,10 @@ class ApiClient {
   }
 
   // Auth endpoints
-  async register(email: string, password: string) {
+  async register(email: string, password: string, accountType: 'user' | 'merchant') {
     return this.request('/api/v1/auth/register', {
       method: 'POST',
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ email, password, account_type: accountType }),
     });
   }
 
@@ -64,6 +74,16 @@ class ApiClient {
     return this.request('/api/v1/auth/reset-password', {
       method: 'POST',
       body: JSON.stringify({ email }),
+    });
+  }
+
+  async changePassword(currentPassword: string, newPassword: string) {
+    return this.request<{ message: string }>('/api/v1/auth/change-password', {
+      method: 'POST',
+      body: JSON.stringify({
+        current_password: currentPassword,
+        new_password: newPassword,
+      }),
     });
   }
 
@@ -98,6 +118,16 @@ class ApiClient {
     });
   }
 
+  async updateApplication(
+    appId: string,
+    data: { name: string; description?: string; redirect_uris: string[]; scopes: string[] }
+  ) {
+    return this.request(`/api/v1/apps/${appId}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
   async authorize(data: {
     response_type: string;
     client_id: string;
@@ -108,6 +138,37 @@ class ApiClient {
     return this.request('/oauth2/authorize', {
       method: 'POST',
       body: JSON.stringify(data),
+    });
+  }
+
+  async getXmojBinding() {
+    return this.request<{ binding: any | null }>('/api/v1/xmoj/binding', {
+      method: 'GET',
+    });
+  }
+
+  async bindXmoj(data: { xmoj_username: string; phpsessid: string; bind_method: 'bookmark' | 'manual' }) {
+    return this.request<{ binding: any }>('/api/v1/xmoj/bind', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async unbindXmoj() {
+    return this.request<{ message: string }>('/api/v1/xmoj/bind', {
+      method: 'DELETE',
+    });
+  }
+
+  async getMyAuthorizations() {
+    return this.request<{ authorizations: AuthorizedAppItem[] }>('/api/v1/me/authorizations', {
+      method: 'GET',
+    });
+  }
+
+  async revokeMyAuthorization(appId: string) {
+    return this.request<{ message: string }>(`/api/v1/me/authorizations/${appId}`, {
+      method: 'DELETE',
     });
   }
 

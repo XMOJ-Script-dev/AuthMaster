@@ -22,11 +22,13 @@ export class AuthService {
     const passwordHash = await hashPassword(input.password);
 
     // Create user
-    const user = await this.db.createUser(input.email, passwordHash);
+    const user = await this.db.createUser(input.email, passwordHash, input.account_type);
 
     return {
       id: user.id,
       email: user.email,
+      role: user.role,
+      status: user.status,
       created_at: user.created_at,
     };
   }
@@ -50,6 +52,8 @@ export class AuthService {
       {
         sub: user.id,
         email: user.email,
+        role: user.role,
+        status: user.status,
         iss: this.env.ISSUER,
         exp: Math.floor(Date.now() / 1000) + expiresIn,
         iat: Math.floor(Date.now() / 1000),
@@ -61,6 +65,8 @@ export class AuthService {
       user: {
         id: user.id,
         email: user.email,
+        role: user.role,
+        status: user.status,
         created_at: user.created_at,
       },
       token,
@@ -77,6 +83,8 @@ export class AuthService {
     return {
       userId: payload.sub,
       email: payload.email || '',
+      role: payload.role || 'merchant',
+      status: payload.status || 'active',
     };
   }
 
@@ -91,5 +99,20 @@ export class AuthService {
     // In production, send email with reset link
     // For now, just log it
     console.log(`Password reset requested for ${email}`);
+  }
+
+  async changePassword(userId: string, currentPassword: string, newPassword: string): Promise<void> {
+    const user = await this.db.getUserById(userId);
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    const valid = await verifyPassword(currentPassword, user.password_hash);
+    if (!valid) {
+      throw new Error('Current password is incorrect');
+    }
+
+    const newHash = await hashPassword(newPassword);
+    await this.db.updateUserPassword(userId, newHash);
   }
 }

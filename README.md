@@ -119,15 +119,13 @@ npx wrangler pages deploy dist --project-name=authmaster
 
 # 部署前端到 Cloudflare Pages
 
+```
 cd packages/web-console
 npm run build
 npm run deploy
-
 ```
 
 ## 项目结构
-
-```
 
 authmaster/
 ├── packages/
@@ -137,13 +135,12 @@ authmaster/
 ├── docs/                 # 文档
 └── README.md
 
-```
-
 ## 文档
 
 - [API 文档](./docs/API.md)
 - [部署指南](./docs/DEPLOYMENT.md)
 - [OAuth2 流程](./docs/OAUTH2.md)
+- [商户与用户接入及回调演示](./docs/MERCHANT_USER_CALLBACK_GUIDE.md)
 - [开发指南](./docs/DEVELOPMENT.md)
 
 ## License
@@ -153,4 +150,3 @@ MIT License - 详见 [LICENSE](./LICENSE) 文件
 ## 贡献
 
 欢迎提交 Issue 和 Pull Request！
-```

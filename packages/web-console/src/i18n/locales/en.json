@@ -17,6 +17,9 @@
     "home": "Home",
     "dashboard": "Dashboard",
     "applications": "Applications",
+    "xmojBinding": "XMOJ Binding",
+    "account": "Account",
+    "changePassword": "Change Password",
     "login": "Login",
     "register": "Register",
     "logout": "Logout"
@@ -39,30 +42,66 @@
         "title": "Enterprise Security",
         "description": "Built-in DDoS protection, WAF, and automatic SSL certificates"
       }
+    },
+    "moreFeatures": {
+      "title": "Features",
+      "item1": "User registration, login, and password reset",
+      "item2": "Third-party application management",
+      "item3": "OAuth2 authorization code and client credentials flows",
+      "item4": "JWT token generation and validation",
+      "item5": "API usage tracking and analytics",
+      "item6": "PKCE support for enhanced security"
     }
   },
   "auth": {
     "login": {
       "title": "Login",
       "email": "Email",
+      "emailPlaceholder": "you@example.com",
       "password": "Password",
       "submit": "Sign In",
+      "submitting": "Signing in...",
       "noAccount": "Don't have an account?",
-      "signUp": "Sign up"
+      "signUp": "Sign up",
+      "failed": "Login failed"
     },
     "register": {
       "title": "Create Account",
+      "accountTypeLabel": "Account Type",
+      "accountTypeUser": "User",
+      "accountTypeMerchant": "Merchant",
+      "accountTypeUserHint": "User accounts can bind XMOJ and manage their own authorizations.",
+      "accountTypeMerchantHint": "Merchant accounts can create and manage OAuth applications.",
       "email": "Email",
       "password": "Password",
       "confirmPassword": "Confirm Password",
       "submit": "Create Account",
+      "submitting": "Creating account...",
       "hasAccount": "Already have an account?",
       "signIn": "Sign in",
-      "passwordMismatch": "Passwords do not match"
+      "passwordMismatch": "Passwords do not match",
+      "failed": "Registration failed"
     }
   },
   "dashboard": {
     "title": "Dashboard",
+    "user": {
+      "stats": {
+        "authorizedApps": "Authorized Apps",
+        "activeTokens": "Active Tokens",
+        "xmojBinding": "XMOJ Binding"
+      },
+      "bound": "Bound",
+      "notBound": "Not Bound",
+      "authorizedAppsTitle": "My Authorized Apps",
+      "manageXmoj": "Manage XMOJ Binding",
+      "emptyAuthorizations": "You have not authorized any applications yet.",
+      "revokeAuthorization": "Revoke Authorization",
+      "scope": "Scope",
+      "activeTokenCount": "Active Token Count",
+      "loadFailed": "Failed to load authorizations",
+      "revokeFailed": "Failed to revoke authorization"
+    },
     "stats": {
       "totalApps": "Total Applications",
       "apiCalls": "API Calls (30d)",
@@ -88,6 +127,7 @@
     "title": "Applications",
     "createNew": "Create Application",
     "noApps": "No applications yet",
+    "noPermission": "Your role cannot create applications.",
     "createFirst": "Create your first application",
     "viewDetails": "View Details",
     "appId": "App ID",
@@ -101,7 +141,8 @@
       "redirectUrisPlaceholder": "https://example.com/callback",
       "redirectUrisHelp": "Comma-separated list of allowed redirect URIs",
       "scopes": "Scopes",
-      "scopesHelp": "Comma-separated list of OAuth scopes"
+      "scopesHelp": "Comma-separated list of OAuth scopes",
+      "selectScopeRequired": "Please select at least one scope"
     },
     "detail": {
       "credentials": "Credentials",
@@ -121,7 +162,8 @@
       "dangerZone": "Danger Zone",
       "deleteApp": "Delete Application",
       "deleteWarning": "This action cannot be undone. All tokens will be invalidated.",
-      "deleting": "Deleting..."
+      "deleting": "Deleting...",
+      "updateFailed": "Failed to update application"
     }
   },
   "authorize": {
@@ -134,13 +176,76 @@
     "approve": "Authorize",
     "deny": "Deny",
     "authorizing": "Authorizing...",
+    "redirectingTo": "Redirecting to:",
+    "customScope": "Access: {{scope}}",
+    "footer": "By authorizing, you allow this application to access your data according to their terms of service.",
+    "merchantForbidden": "Merchant accounts are not allowed to authorize user access. Please sign in with a user account.",
     "invalidClient": "Invalid client_id",
     "appNotFound": "Application not found"
+  },
+  "scopes": {
+    "openid": "Verify your identity",
+    "profile": "Read your profile information",
+    "email": "Read your email address",
+    "xmoj_profile": "Read your bound XMOJ account information",
+    "read": "Read your data",
+    "write": "Modify your data"
+  },
+  "profile": {
+    "changePassword": {
+      "title": "Change Password",
+      "currentPassword": "Current Password",
+      "newPassword": "New Password",
+      "confirmPassword": "Confirm New Password",
+      "submit": "Update Password",
+      "submitting": "Updating...",
+      "passwordMismatch": "New passwords do not match",
+      "passwordTooShort": "New password must be at least 8 characters",
+      "success": "Password updated successfully",
+      "failed": "Failed to update password"
+    }
   },
   "modal": {
     "deleteApp": {
       "title": "Delete Application",
       "message": "Are you sure you want to delete this application? This action cannot be undone and will invalidate all tokens."
     }
+  },
+  "xmoj": {
+    "title": "XMOJ Account Binding",
+    "onlyUserCanBind": "Only user accounts can bind XMOJ.",
+    "currentBinding": "Current Binding",
+    "notBound": "No XMOJ account bound yet.",
+    "username": "XMOJ Username",
+    "userId": "XMOJ User ID",
+    "method": "Bind Method",
+    "bindNow": "Bind XMOJ Account",
+    "methodSelect": "Binding Method",
+    "bookmarkMethod": "Bookmark Assisted",
+    "manualMethod": "Manual Input",
+    "mobileBookmarkHint": "Mobile device detected. Default switched to manual input; bookmark flow is less reliable on mobile.",
+    "bookmarkStepTitle": "One-click Bookmark Binding",
+    "bookmarkStep1": "Drag the button to your bookmarks bar, or copy the code and create a bookmark manually.",
+    "bookmarkStep2": "Sign in on xmoj.tech, then click the saved bookmark.",
+    "bookmarkStep3": "You will be redirected back, auto-filled, and binding will start automatically.",
+    "bookmarkLoginRequired": "Please sign in to XMOJ first!",
+    "bookmarkHelp": "Copy the bookmarklet, save it as a browser bookmark, run it on xmoj.tech after login, and paste the PHPSESSID here.",
+    "profileCheckHint": "Verification rule: AuthMaster requests profile.php with your PHPSESSID, reads user_id, and strictly compares it with the input username.",
+    "dragBookmarklet": "Drag to Bookmark Bar",
+    "copyBookmarklet": "Copy Bookmarklet",
+    "bookmarkCopied": "Bookmark code copied to clipboard.",
+    "bookmarkCopyFailed": "Copy failed. Please copy manually.",
+    "autoFillDetected": "Session callback detected. Username {{username}} has been auto-filled.",
+    "autoBinding": "Session callback detected. Binding automatically...",
+    "usernameInputLabel": "XMOJ Username",
+    "usernameInputPlaceholder": "Enter your XMOJ username",
+    "usernameRequired": "Please enter XMOJ username",
+    "phpsessidLabel": "PHPSESSID",
+    "phpsessidPlaceholder": "Paste PHPSESSID here",
+    "bind": "Bind",
+    "binding": "Binding...",
+    "unbind": "Unbind",
+    "rebindHint": "An XMOJ account is already bound. Unbind first to bind another account.",
+    "bindSuccess": "Binding succeeded. Verified profile: {{username}}"
   }
 }

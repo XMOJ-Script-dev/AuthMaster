@@ -17,6 +17,9 @@
     "home": "首页",
     "dashboard": "控制台",
     "applications": "应用管理",
+    "xmojBinding": "XMOJ 绑定",
+    "account": "账号",
+    "changePassword": "修改密码",
     "login": "登录",
     "register": "注册",
     "logout": "退出登录"
@@ -39,30 +42,66 @@
         "title": "企业级安全",
         "description": "内置 DDoS 防护、WAF 和自动 SSL 证书"
       }
+    },
+    "moreFeatures": {
+      "title": "功能特性",
+      "item1": "用户注册、登录与密码重置",
+      "item2": "第三方应用管理",
+      "item3": "支持 OAuth2 授权码与客户端凭证流程",
+      "item4": "JWT 令牌生成与校验",
+      "item5": "API 使用追踪与统计分析",
+      "item6": "支持 PKCE 增强安全性"
     }
   },
   "auth": {
     "login": {
       "title": "登录",
       "email": "邮箱",
+      "emailPlaceholder": "you@example.com",
       "password": "密码",
       "submit": "登录",
+      "submitting": "登录中...",
       "noAccount": "还没有账号？",
-      "signUp": "注册"
+      "signUp": "注册",
+      "failed": "登录失败"
     },
     "register": {
       "title": "创建账号",
+      "accountTypeLabel": "账号类型",
+      "accountTypeUser": "用户",
+      "accountTypeMerchant": "商户",
+      "accountTypeUserHint": "用户账号可绑定 XMOJ，并管理自己的授权记录。",
+      "accountTypeMerchantHint": "商户账号可创建并管理 OAuth 应用。",
       "email": "邮箱",
       "password": "密码",
       "confirmPassword": "确认密码",
       "submit": "创建账号",
+      "submitting": "注册中...",
       "hasAccount": "已有账号？",
       "signIn": "登录",
-      "passwordMismatch": "密码不匹配"
+      "passwordMismatch": "密码不匹配",
+      "failed": "注册失败"
     }
   },
   "dashboard": {
     "title": "控制台",
+    "user": {
+      "stats": {
+        "authorizedApps": "已授权应用",
+        "activeTokens": "活跃令牌",
+        "xmojBinding": "XMOJ 绑定"
+      },
+      "bound": "已绑定",
+      "notBound": "未绑定",
+      "authorizedAppsTitle": "我的授权应用",
+      "manageXmoj": "管理 XMOJ 绑定",
+      "emptyAuthorizations": "你还没有授权任何应用。",
+      "revokeAuthorization": "撤销授权",
+      "scope": "授权范围",
+      "activeTokenCount": "活跃令牌数",
+      "loadFailed": "加载授权列表失败",
+      "revokeFailed": "撤销授权失败"
+    },
     "stats": {
       "totalApps": "应用总数",
       "apiCalls": "API 调用（30天）",
@@ -88,6 +127,7 @@
     "title": "应用管理",
     "createNew": "创建应用",
     "noApps": "暂无应用",
+    "noPermission": "当前角色无创建应用权限。",
     "createFirst": "创建您的第一个应用",
     "viewDetails": "查看详情",
     "appId": "应用 ID",
@@ -101,7 +141,8 @@
       "redirectUrisPlaceholder": "https://example.com/callback",
       "redirectUrisHelp": "用逗号分隔的允许的回调地址列表",
       "scopes": "权限范围",
-      "scopesHelp": "用逗号分隔的 OAuth 权限范围"
+      "scopesHelp": "用逗号分隔的 OAuth 权限范围",
+      "selectScopeRequired": "请至少选择一个权限范围"
     },
     "detail": {
       "credentials": "凭证信息",
@@ -121,7 +162,8 @@
       "dangerZone": "危险操作",
       "deleteApp": "删除应用",
       "deleteWarning": "此操作无法撤销，所有令牌将被作废。",
-      "deleting": "删除中..."
+      "deleting": "删除中...",
+      "updateFailed": "更新应用失败"
     }
   },
   "authorize": {
@@ -134,13 +176,76 @@
     "approve": "授权",
     "deny": "拒绝",
     "authorizing": "授权中...",
+    "redirectingTo": "即将回调到：",
+    "customScope": "访问权限：{{scope}}",
+    "footer": "授权后，即表示你允许该应用按照其服务条款访问你的相关数据。",
+    "merchantForbidden": "商户账户不允许进行用户授权，请使用用户账户登录。",
     "invalidClient": "无效的客户端 ID",
     "appNotFound": "应用未找到"
+  },
+  "scopes": {
+    "openid": "验证你的身份",
+    "profile": "读取你的个人资料信息",
+    "email": "读取你的邮箱地址",
+    "xmoj_profile": "读取你已绑定的 XMOJ 账号信息",
+    "read": "读取你的数据",
+    "write": "修改你的数据"
+  },
+  "profile": {
+    "changePassword": {
+      "title": "修改密码",
+      "currentPassword": "当前密码",
+      "newPassword": "新密码",
+      "confirmPassword": "确认新密码",
+      "submit": "提交修改",
+      "submitting": "提交中...",
+      "passwordMismatch": "两次输入的新密码不一致",
+      "passwordTooShort": "新密码至少需要 8 位",
+      "success": "密码修改成功",
+      "failed": "修改密码失败"
+    }
   },
   "modal": {
     "deleteApp": {
       "title": "删除应用",
       "message": "确定要删除此应用吗？此操作无法撤销，所有令牌将被作废。"
     }
+  },
+  "xmoj": {
+    "title": "XMOJ 账号绑定",
+    "onlyUserCanBind": "仅用户账号可绑定 XMOJ。",
+    "currentBinding": "当前绑定",
+    "notBound": "尚未绑定 XMOJ 账号。",
+    "username": "XMOJ 用户名",
+    "userId": "XMOJ 用户 ID",
+    "method": "绑定方式",
+    "bindNow": "绑定 XMOJ 账号",
+    "methodSelect": "绑定方式",
+    "bookmarkMethod": "书签辅助",
+    "manualMethod": "手动输入",
+    "mobileBookmarkHint": "检测到移动端，已默认切换为手动输入；书签方式在移动端体验较弱。",
+    "bookmarkStepTitle": "书签一键绑定",
+    "bookmarkStep1": "将“拖拽保存书签”按钮拖到浏览器书签栏，或点击复制代码手动新建书签。",
+    "bookmarkStep2": "在 xmoj.tech 登录后，点击该书签。",
+    "bookmarkStep3": "页面会自动跳回并完成账号名与会话填充，然后自动发起绑定。",
+    "bookmarkLoginRequired": "请先登录 XMOJ！",
+    "bookmarkHelp": "复制书签脚本，保存为浏览器书签，登录 xmoj.tech 后执行，再将 PHPSESSID 粘贴到下方。",
+    "profileCheckHint": "校验规则：AuthMaster 会使用 PHPSESSID 请求 profile.php 并读取 user_id，与输入账号名严格比对。",
+    "dragBookmarklet": "拖拽保存书签",
+    "copyBookmarklet": "复制书签脚本",
+    "bookmarkCopied": "书签代码已复制到剪贴板。",
+    "bookmarkCopyFailed": "复制失败，请手动复制。",
+    "autoFillDetected": "已检测到回跳会话，账号 {{username}} 已自动填充。",
+    "autoBinding": "检测到会话回跳，正在自动绑定...",
+    "usernameInputLabel": "XMOJ 账号名",
+    "usernameInputPlaceholder": "请输入你的 XMOJ 账号名",
+    "usernameRequired": "请输入 XMOJ 账号名",
+    "phpsessidLabel": "PHPSESSID",
+    "phpsessidPlaceholder": "在此粘贴 PHPSESSID",
+    "bind": "绑定",
+    "binding": "绑定中...",
+    "unbind": "解绑",
+    "rebindHint": "已绑定 XMOJ 账号，如需绑定新账号请先解绑。",
+    "bindSuccess": "绑定成功，已校验 profile 名称：{{username}}"
   }
 }

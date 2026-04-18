@@ -4,6 +4,8 @@ import { useTranslation } from 'react-i18next';
 import { api } from '../api/client';
 import { ConfirmModal } from '../components/ConfirmModal';
 
+const SCOPE_OPTIONS = ['openid', 'profile', 'email', 'xmoj_profile', 'read', 'write'];
+
 export function ApplicationDetailPage() {
   const { t } = useTranslation();
   const { appId } = useParams<{ appId: string }>();
@@ -13,8 +15,19 @@ export function ApplicationDetailPage() {
   const [error, setError] = useState('');
   const [showSecret, setShowSecret] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [editing, setEditing] = useState(false);
   const [showCopied, setShowCopied] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [formData, setFormData] = useState({
+    name: '',
+    description: '',
+    redirect_uris: '',
+    scopes: ['openid', 'profile', 'email'] as string[],
+  });
+  const frontendBase = window.location.origin.replace(/\/$/, '');
+  const backendBase = (import.meta.env.VITE_API_URL || window.location.origin).replace(/\/$/, '');
+  const scopeParam = (application?.scopes || ['openid', 'profile', 'email']).join(' ');
 
   useEffect(() => {
     loadApplication();
@@ -24,8 +37,14 @@ export function ApplicationDetailPage() {
     if (!appId) return;
 
     try {
-      const data = await api.getApplication(appId);
+      const data: any = await api.getApplication(appId);
       setApplication(data);
+      setFormData({
+        name: data.name || '',
+        description: data.description || '',
+        redirect_uris: (data.redirect_uris || []).join(', '),
+        scopes: data.scopes || ['openid', 'profile', 'email'],
+      });
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -49,6 +68,32 @@ export function ApplicationDetailPage() {
     navigator.clipboard.writeText(text);
     setShowCopied(true);
     setTimeout(() => setShowCopied(false), 2000);
+  };
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+
+    if (formData.scopes.length === 0) {
+      setError(t('applications.form.selectScopeRequired'));
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const updated = await api.updateApplication(appId!, {
+        name: formData.name,
+        description: formData.description || undefined,
+        redirect_uris: formData.redirect_uris.split(',').map(s => s.trim()).filter(Boolean),
+        scopes: formData.scopes,
+      });
+      setApplication(updated);
+      setEditing(false);
+    } catch (err: any) {
+      setError(err.message || t('applications.detail.updateFailed'));
+    } finally {
+      setSaving(false);
+    }
   };
 
   if (loading) {
@@ -82,9 +127,96 @@ export function ApplicationDetailPage() {
         {application.description && (
           <p className="text-gray-600 mt-2">{application.description}</p>
         )}
+        <div className="mt-4">
+          <button
+            onClick={() => setEditing(prev => !prev)}
+            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          >
+            {editing ? t('common.cancel') : t('common.edit')}
+          </button>
+        </div>
       </div>
 
       <div className="grid gap-6">
+        {editing && (
+          <div className="bg-white rounded-lg shadow p-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">{t('common.edit')}</h2>
+            <form onSubmit={handleSave} className="space-y-4">
+              <div>
+                <label htmlFor="edit-app-name" className="block text-sm font-medium text-gray-700 mb-2">
+                  {t('applications.form.name')}
+                </label>
+                <input
+                  id="edit-app-name"
+                  type="text"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="edit-app-description" className="block text-sm font-medium text-gray-700 mb-2">
+                  {t('applications.form.description')}
+                </label>
+                <textarea
+                  id="edit-app-description"
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="edit-app-redirect-uris" className="block text-sm font-medium text-gray-700 mb-2">
+                  {t('applications.form.redirectUris')}
+                </label>
+                <input
+                  id="edit-app-redirect-uris"
+                  type="text"
+                  value={formData.redirect_uris}
+                  onChange={(e) => setFormData({ ...formData, redirect_uris: e.target.value })}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  {t('applications.form.scopes')}
+                </label>
+                <div className="grid grid-cols-2 gap-2 border border-gray-300 rounded-md p-3">
+                  {SCOPE_OPTIONS.map(scope => (
+                    <label key={scope} className="flex items-center gap-2 text-sm text-gray-700">
+                      <input
+                        type="checkbox"
+                        checked={formData.scopes.includes(scope)}
+                        onChange={(e) => {
+                          const nextScopes = e.target.checked
+                            ? [...formData.scopes, scope]
+                            : formData.scopes.filter(s => s !== scope);
+                          setFormData({ ...formData, scopes: nextScopes });
+                        }}
+                      />
+                      <span>{t(`scopes.${scope}`)}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={saving}
+                className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
+              >
+                {saving ? t('common.loading') : t('common.save')}
+              </button>
+            </form>
+          </div>
+        )}
+
         {/* Credentials */}
         <div className="bg-white rounded-lg shadow p-6">
           <h2 className="text-xl font-semibold text-gray-900 mb-4">{t('applications.detail.credentials')}</h2>
@@ -189,14 +321,14 @@ export function ApplicationDetailPage() {
             <div>
               <h3 className="font-semibold text-gray-900 mb-2">1. {t('applications.detail.authUrl')}</h3>
               <code className="block bg-gray-100 px-3 py-2 rounded text-sm overflow-x-auto">
-                http://localhost:3000/authorize?response_type=code&client_id={application.app_id}&redirect_uri={encodeURIComponent(application.redirect_uris[0])}&scope=openid+profile+email&state=RANDOM_STATE
+                {frontendBase}/authorize?response_type=code&client_id={application.app_id}&redirect_uri={encodeURIComponent(application.redirect_uris[0])}&scope={encodeURIComponent(scopeParam)}&state=RANDOM_STATE
               </code>
             </div>
 
             <div>
               <h3 className="font-semibold text-gray-900 mb-2">2. {t('applications.detail.tokenExchange')}</h3>
               <pre className="bg-gray-100 px-3 py-2 rounded text-sm overflow-x-auto">
-{`curl -X POST http://localhost:8787/oauth2/token \\
+{`curl -X POST ${backendBase}/oauth2/token \\
   -H "Content-Type: application/json" \\
   -d '{
     "grant_type": "authorization_code",
@@ -211,7 +343,7 @@ export function ApplicationDetailPage() {
             <div>
               <h3 className="font-semibold text-gray-900 mb-2">3. {t('applications.detail.getUserInfo')}</h3>
               <pre className="bg-gray-100 px-3 py-2 rounded text-sm overflow-x-auto">
-{`curl http://localhost:8787/oauth2/userinfo \\
+{`curl ${backendBase}/oauth2/userinfo \\
   -H "Authorization: Bearer ACCESS_TOKEN"`}
               </pre>
             </div>

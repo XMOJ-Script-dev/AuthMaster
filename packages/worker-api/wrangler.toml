@@ -1,7 +1,16 @@
 name = "authmaster-api"
+account_id = "89969bdf9d5ab8202f8ad8b8ae2c40b8"
 main = "src/index.ts"
 compatibility_date = "2024-01-01"
-node_compat = true
+compatibility_flags = ["nodejs_compat"]
+routes = [
+	{ pattern = "auth.xmoj-bbs.me/*", zone_name = "xmoj-bbs.me" }
+]
+
+[vars]
+XMOJ_BASE_URL = "https://xmoj.tech"
+FRONTEND_URL = "https://sso.xmoj-bbs.me"
+ISSUER = "https://auth.xmoj-bbs.me"
 
 [env.production]
 name = "authmaster-api"
@@ -12,9 +21,24 @@ name = "authmaster-api-staging"
 [[d1_databases]]
 binding = "DB"
 database_name = "authmaster-db"
-database_id = "27d5f2cd-a430-4eb7-85a1-c249c45e5a8d"
+database_id = "f1ab46a9-3d4d-475e-9c95-329d01c1a20c"
 
 [[kv_namespaces]]
 binding = "CACHE"
-id = "17e4cce7487f48209be0f0805b19ade5"
-preview_id = "17e4cce7487f48209be0f0805b19ade5"
+id = "a1e71a1fe944490cbf0f9cdb6f0a2ac6"
+preview_id = "a1e71a1fe944490cbf0f9cdb6f0a2ac6"
+
+[observability]
+enabled = false
+head_sampling_rate = 1
+
+[observability.logs]
+enabled = true
+head_sampling_rate = 1
+persist = true
+invocation_logs = true
+
+[observability.traces]
+enabled = false
+persist = true
+head_sampling_rate = 1

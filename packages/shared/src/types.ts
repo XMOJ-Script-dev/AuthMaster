@@ -1,8 +1,13 @@
 // User types
+export type AccountRole = 'user' | 'merchant' | 'admin';
+export type AccountStatus = 'active' | 'disabled';
+
 export interface User {
   id: string;
   email: string;
   password_hash: string;
+  role: AccountRole;
+  status: AccountStatus;
   created_at: string;
   updated_at: string;
 }
@@ -10,6 +15,26 @@ export interface User {
 export interface UserPublic {
   id: string;
   email: string;
+  role: AccountRole;
+  status: AccountStatus;
+  created_at: string;
+}
+
+export interface XmojBinding {
+  id: string;
+  user_id: string;
+  xmoj_user_id: string;
+  xmoj_username: string;
+  phpsessid_encrypted: string;
+  bind_method: 'bookmark' | 'manual';
+  created_at: string;
+  updated_at: string;
+}
+
+export interface XmojBindingPublic {
+  xmoj_user_id: string;
+  xmoj_username: string;
+  bind_method: 'bookmark' | 'manual';
   created_at: string;
 }
 
@@ -46,6 +71,16 @@ export interface Authorization {
   created_at: string;
 }
 
+export interface UserAuthorizationApp {
+  app_id: string;
+  app_name: string;
+  app_description?: string;
+  scope: string;
+  authorized_at: string;
+  last_used_at?: string;
+  active_tokens: number;
+}
+
 // OAuth Token types
 export interface OAuthToken {
   id: string;
@@ -75,6 +110,7 @@ export interface APIUsage {
 export interface RegisterRequest {
   email: string;
   password: string;
+  account_type: Extract<AccountRole, 'user' | 'merchant'>;
 }
 
 export interface LoginRequest {
@@ -86,6 +122,16 @@ export interface LoginResponse {
   user: UserPublic;
   token: string;
   expires_in: number;
+}
+
+export interface BindXmojRequest {
+  xmoj_username: string;
+  phpsessid: string;
+  bind_method: 'bookmark' | 'manual';
+}
+
+export interface BindXmojResponse {
+  binding: XmojBindingPublic;
 }
 
 export interface ResetPasswordRequest {
@@ -144,6 +190,8 @@ export interface ErrorResponse {
 export interface JWTPayload {
   sub: string;
   email?: string;
+  role?: AccountRole;
+  status?: AccountStatus;
   aud?: string;
   iss: string;
   exp: number;
@@ -156,4 +204,7 @@ export interface UserInfo {
   sub: string;
   email: string;
   email_verified: boolean;
+  xmoj_bound?: boolean;
+  xmoj_user_id?: string;
+  xmoj_username?: string;
 }

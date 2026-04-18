@@ -1,5 +1,6 @@
 import {
   CreateApplicationInput,
+  UpdateApplicationInput,
   CreateApplicationResponse,
   ApplicationPublic,
   Application,
@@ -76,6 +77,31 @@ export class AppService {
     }
 
     await this.db.deleteApplication(appId);
+  }
+
+  async updateApplication(appId: string, userId: string, input: UpdateApplicationInput): Promise<ApplicationPublic> {
+    const app = await this.db.getApplicationByAppId(appId);
+    if (!app) {
+      throw new Error('Application not found');
+    }
+
+    if (app.user_id !== userId) {
+      throw new Error('Unauthorized');
+    }
+
+    const updated = await this.db.updateApplication(
+      appId,
+      input.name,
+      input.description,
+      input.redirect_uris,
+      input.scopes
+    );
+
+    if (!updated) {
+      throw new Error('Application not found');
+    }
+
+    return this.toPublic(updated);
   }
 
   private toPublic(app: Application): ApplicationPublic {

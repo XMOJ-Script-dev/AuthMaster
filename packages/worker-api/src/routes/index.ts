@@ -3,14 +3,18 @@ import { Router, jsonResponse, corsHeaders } from '../router';
 import { AuthService } from '../services/auth';
 import { AppService } from '../services/app';
 import { OAuthService } from '../services/oauth';
-import { requireAuth, isAuthContext } from '../middleware/auth';
+import { XmojService } from '../services/xmoj';
+import { requireAuth, isAuthContext, requireRole } from '../middleware/auth';
 import {
   registerSchema,
   loginSchema,
   resetPasswordSchema,
+  changePasswordSchema,
   createApplicationSchema,
+  updateApplicationSchema,
   authorizeSchema,
   tokenSchema,
+  bindXmojSchema,
   HTTP_STATUS,
 } from '@authmaster/shared';
 
@@ -32,7 +36,7 @@ export function setupRoutes(router: Router): void {
       grant_types_supported: ['authorization_code', 'client_credentials', 'refresh_token'],
       subject_types_supported: ['public'],
       id_token_signing_alg_values_supported: ['HS256'],
-      scopes_supported: ['openid', 'profile', 'email', 'read', 'write'],
+      scopes_supported: ['openid', 'profile', 'email', 'xmoj_profile', 'read', 'write'],
       token_endpoint_auth_methods_supported: ['client_secret_post', 'client_secret_basic'],
       claims_supported: ['sub', 'email', 'email_verified'],
     });
@@ -81,11 +85,35 @@ export function setupRoutes(router: Router): void {
     }
   });
 
+  router.add('POST', '/api/v1/auth/change-password', async (request, env) => {
+    const authResult = await requireAuth(request, env);
+    if (!isAuthContext(authResult)) {
+      return authResult;
+    }
+
+    try {
+      const body = await request.json();
+      const input = changePasswordSchema.parse(body);
+
+      const authService = new AuthService(env);
+      await authService.changePassword(authResult.userId, input.current_password, input.new_password);
+
+      return jsonResponse({ message: 'Password changed successfully' }, HTTP_STATUS.OK);
+    } catch (error: any) {
+      return jsonResponse({ error: error.message }, HTTP_STATUS.BAD_REQUEST);
+    }
+  });
+
   // Application routes
   router.add('POST', '/api/v1/apps/register', async (request, env) => {
     const authResult = await requireAuth(request, env);
     if (!isAuthContext(authResult)) {
       return authResult;
+    }
+
+    const roleError = requireRole(authResult, ['merchant', 'admin']);
+    if (roleError) {
+      return roleError;
     }
 
     try {
@@ -127,11 +155,40 @@ export function setupRoutes(router: Router): void {
       return authResult;
     }
 
+    const roleError = requireRole(authResult, ['merchant', 'admin']);
+    if (roleError) {
+      return roleError;
+    }
+
     try {
       const appService = new AppService(env);
       await appService.deleteApplication(params.appId, authResult.userId);
 
       return jsonResponse({ message: 'Application deleted successfully' }, HTTP_STATUS.OK);
+    } catch (error: any) {
+      return jsonResponse({ error: error.message }, HTTP_STATUS.BAD_REQUEST);
+    }
+  });
+
+  router.add('PUT', '/api/v1/apps/:appId', async (request, env, params) => {
+    const authResult = await requireAuth(request, env);
+    if (!isAuthContext(authResult)) {
+      return authResult;
+    }
+
+    const roleError = requireRole(authResult, ['merchant', 'admin']);
+    if (roleError) {
+      return roleError;
+    }
+
+    try {
+      const body = await request.json();
+      const input = updateApplicationSchema.parse(body);
+
+      const appService = new AppService(env);
+      const app = await appService.updateApplication(params.appId, authResult.userId, input);
+
+      return jsonResponse(app, HTTP_STATUS.OK);
     } catch (error: any) {
       return jsonResponse({ error: error.message }, HTTP_STATUS.BAD_REQUEST);
     }
@@ -153,6 +210,102 @@ export function setupRoutes(router: Router): void {
     }
   });
 
+  router.add('GET', '/api/v1/me/authorizations', async (request, env) => {
+    const authResult = await requireAuth(request, env);
+    if (!isAuthContext(authResult)) {
+      return authResult;
+    }
+
+    try {
+      const oauthService = new OAuthService(env);
+      const authorizations = await oauthService.getUserAuthorizations(authResult.userId);
+      return jsonResponse({ authorizations }, HTTP_STATUS.OK);
+    } catch (error: any) {
+      return jsonResponse({ error: error.message }, HTTP_STATUS.BAD_REQUEST);
+    }
+  });
+
+  router.add('DELETE', '/api/v1/me/authorizations/:appId', async (request, env, params) => {
+    const authResult = await requireAuth(request, env);
+    if (!isAuthContext(authResult)) {
+      return authResult;
+    }
+
+    try {
+      const oauthService = new OAuthService(env);
+      await oauthService.revokeUserAuthorization(authResult.userId, params.appId);
+      return jsonResponse({ message: 'Authorization revoked successfully' }, HTTP_STATUS.OK);
+    } catch (error: any) {
+      return jsonResponse({ error: error.message }, HTTP_STATUS.BAD_REQUEST);
+    }
+  });
+
+  // XMOJ account binding (user only)
+  router.add('GET', '/api/v1/xmoj/binding', async (request, env) => {
+    const authResult = await requireAuth(request, env);
+    if (!isAuthContext(authResult)) {
+      return authResult;
+    }
+
+    const roleError = requireRole(authResult, ['user']);
+    if (roleError) {
+      return roleError;
+    }
+
+    try {
+      const xmojService = new XmojService(env);
+      const binding = await xmojService.getMyBinding(authResult.userId);
+
+      return jsonResponse({ binding }, HTTP_STATUS.OK);
+    } catch (error: any) {
+      return jsonResponse({ error: error.message }, HTTP_STATUS.BAD_REQUEST);
+    }
+  });
+
+  router.add('POST', '/api/v1/xmoj/bind', async (request, env) => {
+    const authResult = await requireAuth(request, env);
+    if (!isAuthContext(authResult)) {
+      return authResult;
+    }
+
+    const roleError = requireRole(authResult, ['user']);
+    if (roleError) {
+      return roleError;
+    }
+
+    try {
+      const body = await request.json();
+      const input = bindXmojSchema.parse(body);
+
+      const xmojService = new XmojService(env);
+      const binding = await xmojService.bind(authResult.userId, input);
+
+      return jsonResponse({ binding }, HTTP_STATUS.OK);
+    } catch (error: any) {
+      return jsonResponse({ error: error.message }, HTTP_STATUS.BAD_REQUEST);
+    }
+  });
+
+  router.add('DELETE', '/api/v1/xmoj/bind', async (request, env) => {
+    const authResult = await requireAuth(request, env);
+    if (!isAuthContext(authResult)) {
+      return authResult;
+    }
+
+    const roleError = requireRole(authResult, ['user']);
+    if (roleError) {
+      return roleError;
+    }
+
+    try {
+      const xmojService = new XmojService(env);
+      await xmojService.unbind(authResult.userId);
+      return jsonResponse({ message: 'Unbound successfully' }, HTTP_STATUS.OK);
+    } catch (error: any) {
+      return jsonResponse({ error: error.message }, HTTP_STATUS.BAD_REQUEST);
+    }
+  });
+
   // OAuth2 routes
   router.add('GET', '/oauth2/authorize', async (request, env) => {
     // Redirect to frontend authorization page
@@ -165,6 +318,11 @@ export function setupRoutes(router: Router): void {
     const authResult = await requireAuth(request, env);
     if (!isAuthContext(authResult)) {
       return authResult;
+    }
+
+    const roleError = requireRole(authResult, ['user']);
+    if (roleError) {
+      return jsonResponse({ error: 'Only user accounts can authorize applications' }, HTTP_STATUS.FORBIDDEN);
     }
 
     try {

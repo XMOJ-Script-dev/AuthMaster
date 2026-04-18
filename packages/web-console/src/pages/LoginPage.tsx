@@ -29,7 +29,7 @@ export function LoginPage() {
         navigate('/dashboard');
       }
     } catch (err: any) {
-      setError(err.message || 'Login failed');
+      setError(err.message || t('auth.login.failed'));
     } finally {
       setLoading(false);
     }
@@ -60,13 +60,13 @@ export function LoginPage() {
               onChange={(e) => setEmail(e.target.value)}
               required
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="you@example.com"
+              placeholder={t('auth.login.emailPlaceholder')}
             />
           </div>
 
           <div>
             <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-              Password
+              {t('auth.login.password')}
             </label>
             <input
               id="password"
@@ -84,14 +84,14 @@ export function LoginPage() {
             disabled={loading}
             className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-md font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {loading ? 'Logging in...' : 'Login'}
+            {loading ? t('auth.login.submitting') : t('auth.login.submit')}
           </button>
         </form>
 
         <div className="mt-6 text-center text-sm text-gray-600">
-          Don't have an account?{' '}
+          {t('auth.login.noAccount')}{' '}
           <Link to="/register" className="text-blue-600 hover:text-blue-700 font-medium">
-            Register
+            {t('auth.login.signUp')}
           </Link>
         </div>
       </div>

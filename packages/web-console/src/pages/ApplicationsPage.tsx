@@ -3,9 +3,14 @@ import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { api } from '../api/client';
 import { ConfirmModal } from '../components/ConfirmModal';
+import { useAuth } from '../contexts/AuthContext';
+
+const SCOPE_OPTIONS = ['openid', 'profile', 'email', 'xmoj_profile', 'read', 'write'];
 
 export function ApplicationsPage() {
   const { t } = useTranslation();
+  const { user } = useAuth();
+  const canManageApps = user?.role === 'merchant' || user?.role === 'admin';
   const [applications, setApplications] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -13,7 +18,7 @@ export function ApplicationsPage() {
     name: '',
     description: '',
     redirect_uris: '',
-    scopes: 'openid,profile,email',
+    scopes: ['openid', 'profile', 'email'],
   });
   const [error, setError] = useState('');
   const [createdApp, setCreatedApp] = useState<any>(null);
@@ -38,16 +43,21 @@ export function ApplicationsPage() {
     e.preventDefault();
     setError('');
 
+    if (formData.scopes.length === 0) {
+      setError(t('applications.form.selectScopeRequired'));
+      return;
+    }
+
     try {
       const result = await api.createApplication({
         name: formData.name,
         description: formData.description || undefined,
         redirect_uris: formData.redirect_uris.split(',').map(s => s.trim()),
-        scopes: formData.scopes.split(',').map(s => s.trim()),
+        scopes: formData.scopes,
       });
       setCreatedApp(result);
       setShowForm(false);
-      setFormData({ name: '', description: '', redirect_uris: '', scopes: 'openid,profile,email' });
+      setFormData({ name: '', description: '', redirect_uris: '', scopes: ['openid', 'profile', 'email'] });
       loadApplications();
     } catch (err: any) {
       setError(err.message);
@@ -78,12 +88,14 @@ export function ApplicationsPage() {
     <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold text-gray-900">{t('applications.title')}</h1>
-        <button
-          onClick={() => setShowForm(!showForm)}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md font-semibold"
-        >
-          {showForm ? t('common.cancel') : t('applications.createNew')}
-        </button>
+        {canManageApps && (
+          <button
+            onClick={() => setShowForm(!showForm)}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md font-semibold"
+          >
+            {showForm ? t('common.cancel') : t('applications.createNew')}
+          </button>
+        )}
       </div>
 
       {error && (
@@ -92,7 +104,7 @@ export function ApplicationsPage() {
         </div>
       )}
 
-      {createdApp && (
+      {canManageApps && createdApp && (
         <div className="bg-green-50 border border-green-200 rounded-lg p-6 mb-8">
           <div className="flex justify-between items-start mb-4">
             <h2 className="text-xl font-semibold text-green-900">✓ {t('common.success')}!</h2>
@@ -148,40 +160,45 @@ export function ApplicationsPage() {
         </div>
       )}
 
-      {showForm && (
+      {canManageApps && showForm && (
         <div className="bg-white rounded-lg shadow p-6 mb-8">
           <h2 className="text-xl font-semibold text-gray-900 mb-4">{t('applications.createNew')}</h2>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="app-name" className="block text-sm font-medium text-gray-700 mb-2">
                 {t('applications.form.name')}
               </label>
               <input
+                id="app-name"
                 type="text"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 required
+                placeholder={t('applications.form.namePlaceholder')}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="app-description" className="block text-sm font-medium text-gray-700 mb-2">
                 {t('applications.form.description')}
               </label>
               <textarea
+                id="app-description"
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                placeholder={t('applications.form.descriptionPlaceholder')}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 rows={3}
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="app-redirect-uris" className="block text-sm font-medium text-gray-700 mb-2">
                 {t('applications.form.redirectUris')}
               </label>
               <input
+                id="app-redirect-uris"
                 type="text"
                 value={formData.redirect_uris}
                 onChange={(e) => setFormData({ ...formData, redirect_uris: e.target.value })}
@@ -195,13 +212,24 @@ export function ApplicationsPage() {
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 {t('applications.form.scopes')}
               </label>
-              <input
-                type="text"
-                value={formData.scopes}
-                onChange={(e) => setFormData({ ...formData, scopes: e.target.value })}
-                required
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
+              <div className="grid grid-cols-2 gap-2 border border-gray-300 rounded-md p-3">
+                {SCOPE_OPTIONS.map(scope => (
+                  <label key={scope} className="flex items-center gap-2 text-sm text-gray-700">
+                    <input
+                      type="checkbox"
+                      checked={formData.scopes.includes(scope)}
+                      onChange={(e) => {
+                        const nextScopes = e.target.checked
+                          ? [...formData.scopes, scope]
+                          : formData.scopes.filter(s => s !== scope);
+                        setFormData({ ...formData, scopes: nextScopes });
+                      }}
+                    />
+                    <span>{t(`scopes.${scope}`)}</span>
+                  </label>
+                ))}
+              </div>
+              <p className="text-xs text-gray-500 mt-2">{t('applications.form.scopesHelp')}</p>
             </div>
 
             <button
@@ -216,13 +244,17 @@ export function ApplicationsPage() {
 
       {applications.length === 0 ? (
         <div className="bg-white rounded-lg shadow p-8 text-center">
-          <p className="text-gray-600 mb-4">{t('applications.noApps')}</p>
-          <button
-            onClick={() => setShowForm(true)}
-            className="text-blue-600 hover:text-blue-700 font-medium"
-          >
-            {t('applications.createFirst')}
-          </button>
+          <p className="text-gray-600 mb-4">
+            {canManageApps ? t('applications.noApps') : t('applications.noPermission')}
+          </p>
+          {canManageApps && (
+            <button
+              onClick={() => setShowForm(true)}
+              className="text-blue-600 hover:text-blue-700 font-medium"
+            >
+              {t('applications.createFirst')}
+            </button>
+          )}
         </div>
       ) : (
         <div className="grid gap-6">
@@ -242,12 +274,14 @@ export function ApplicationsPage() {
                   >
                     {t('applications.viewDetails')}
                   </Link>
-                  <button
-                    onClick={() => setDeleteConfirm(app.app_id)}
-                    className="text-red-600 hover:text-red-700 font-medium"
-                  >
-                    {t('common.delete')}
-                  </button>
+                  {canManageApps && (
+                    <button
+                      onClick={() => setDeleteConfirm(app.app_id)}
+                      className="text-red-600 hover:text-red-700 font-medium"
+                    >
+                      {t('common.delete')}
+                    </button>
+                  )}
                 </div>
               </div>
 

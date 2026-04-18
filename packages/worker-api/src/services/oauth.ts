@@ -2,6 +2,7 @@ import {
   AuthorizeInput,
   TokenInput,
   TokenResponse,
+  UserAuthorizationApp,
   ERROR_CODES,
   TOKEN_EXPIRATION,
   GRANT_TYPES,
@@ -208,10 +209,31 @@ export class OAuthService {
       throw new Error('User not found');
     }
 
-    return {
+    const scopes = new Set((token.scope || '').split(/\s+/).filter(Boolean));
+
+    const userInfo: any = {
       sub: user.id,
       email: user.email,
       email_verified: true,
     };
+
+    if (scopes.has('xmoj_profile')) {
+      const binding = await this.db.getXmojBindingByUserId(user.id);
+      userInfo.xmoj_bound = !!binding;
+      if (binding) {
+        userInfo.xmoj_user_id = binding.xmoj_user_id;
+        userInfo.xmoj_username = binding.xmoj_username;
+      }
+    }
+
+    return userInfo;
+  }
+
+  async getUserAuthorizations(userId: string): Promise<UserAuthorizationApp[]> {
+    return this.db.getUserAuthorizations(userId);
+  }
+
+  async revokeUserAuthorization(userId: string, appId: string): Promise<void> {
+    await this.db.revokeUserAuthorization(userId, appId);
   }
 }

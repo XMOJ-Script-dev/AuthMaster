@@ -51,6 +51,10 @@ export async function verifyJWT(token: string, secret: string): Promise<JWTPaylo
  * Sign data using HMAC SHA-256
  */
 async function sign(data: string, secret: string): Promise<string> {
+  if (!secret || secret.trim().length === 0) {
+    throw new Error('JWT_SECRET is missing or empty');
+  }
+
   const encoder = new TextEncoder();
   const keyData = encoder.encode(secret);
   const key = await crypto.subtle.importKey(
