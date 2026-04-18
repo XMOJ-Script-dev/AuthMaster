@@ -152,6 +152,12 @@
   },
   "applications": {
     "title": "应用管理",
+    "creator": "创建方",
+    "badges": {
+      "official": "官方应用",
+      "validated": "已验证",
+      "pendingValidation": "验证审核中"
+    },
     "createNew": "创建应用",
     "noApps": "暂无应用",
     "noPermission": "当前角色无创建应用权限。",
@@ -164,11 +170,16 @@
       "namePlaceholder": "我的应用",
       "description": "描述",
       "descriptionPlaceholder": "可选描述",
+      "creatorName": "创建方名称",
+      "creatorNamePlaceholder": "请输入创建方名称",
+      "isOfficial": "标记为官方应用（仅管理员）",
       "redirectUris": "回调地址",
       "redirectUrisPlaceholder": "https://example.com/callback",
       "redirectUrisHelp": "用逗号分隔的允许的回调地址列表",
       "scopes": "权限范围",
       "scopesHelp": "用逗号分隔的 OAuth 权限范围",
+      "customScopes": "自定义权限范围（管理员）",
+      "customScopesPlaceholder": "例如：openid,profile,email,internal:ops",
       "selectScopeRequired": "请至少选择一个权限范围"
     },
     "detail": {
@@ -191,6 +202,23 @@
       "deleteWarning": "此操作无法撤销，所有令牌将被作废。",
       "deleting": "删除中...",
       "updateFailed": "更新应用失败"
+    },
+    "validation": {
+      "title": "验证与审核",
+      "currentStatus": "当前状态",
+      "contentPlaceholder": "请填写验证申请内容（如应用用途、官网、隐私政策等）",
+      "submit": "提交验证申请",
+      "approve": "批准",
+      "reject": "拒绝",
+      "contentRequired": "请填写验证申请内容",
+      "submitFailed": "提交验证申请失败",
+      "reviewFailed": "审核失败",
+      "submissionNote": "修改说明（将提交管理员审核）",
+      "submissionNotePlaceholder": "说明本次改动原因",
+      "updatePendingReview": "该应用已验证，本次修改已提交管理员审核",
+      "changeRequests": "修改审核记录",
+      "requestStatus": "请求状态",
+      "reviewNotePlaceholder": "填写审核备注（可选）"
     }
   },
   "authorize": {

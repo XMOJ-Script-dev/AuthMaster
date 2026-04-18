@@ -3,11 +3,14 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { api } from '../api/client';
 import { ConfirmModal } from '../components/ConfirmModal';
+import { useAuth } from '../contexts/AuthContext';
 
 const SCOPE_OPTIONS = ['openid', 'profile', 'email', 'xmoj_profile', 'read', 'write'];
 
 export function ApplicationDetailPage() {
   const { t } = useTranslation();
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'admin';
   const { appId } = useParams<{ appId: string }>();
   const navigate = useNavigate();
   const [application, setApplication] = useState<any>(null);
@@ -19,10 +22,17 @@ export function ApplicationDetailPage() {
   const [editing, setEditing] = useState(false);
   const [showCopied, setShowCopied] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [validationContent, setValidationContent] = useState('');
+  const [reviewNote, setReviewNote] = useState('');
+  const [changeRequests, setChangeRequests] = useState<any[]>([]);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
+    creator_name: '',
+    is_official: false,
+    submission_note: '',
     redirect_uris: '',
+    custom_scopes: '',
     scopes: ['openid', 'profile', 'email'] as string[],
   });
   const frontendBase = window.location.origin.replace(/\/$/, '');
@@ -42,9 +52,16 @@ export function ApplicationDetailPage() {
       setFormData({
         name: data.name || '',
         description: data.description || '',
+        creator_name: data.creator_name || '',
+        is_official: !!data.is_official,
+        submission_note: '',
         redirect_uris: (data.redirect_uris || []).join(', '),
+        custom_scopes: '',
         scopes: data.scopes || ['openid', 'profile', 'email'],
       });
+
+      const requests = await api.getAppChangeRequests(appId);
+      setChangeRequests(requests.requests || []);
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -81,18 +98,65 @@ export function ApplicationDetailPage() {
 
     setSaving(true);
     try {
+      const scopedValues = isAdmin && formData.custom_scopes.trim().length > 0
+        ? formData.custom_scopes.split(',').map(s => s.trim()).filter(Boolean)
+        : formData.scopes;
+
       const updated = await api.updateApplication(appId!, {
         name: formData.name,
         description: formData.description || undefined,
+        creator_name: formData.creator_name || undefined,
+        is_official: isAdmin ? formData.is_official : undefined,
+        submission_note: formData.submission_note || undefined,
         redirect_uris: formData.redirect_uris.split(',').map(s => s.trim()).filter(Boolean),
-        scopes: formData.scopes,
+        scopes: scopedValues,
       });
-      setApplication(updated);
+      if ((updated as any).pending_review) {
+        setError(t('applications.validation.updatePendingReview'));
+      } else {
+        setApplication(updated as any);
+      }
       setEditing(false);
+      await loadApplication();
     } catch (err: any) {
       setError(err.message || t('applications.detail.updateFailed'));
     } finally {
       setSaving(false);
+    }
+  };
+
+  const submitValidationRequest = async () => {
+    if (!validationContent.trim()) {
+      setError(t('applications.validation.contentRequired'));
+      return;
+    }
+
+    try {
+      await api.submitValidationRequest(appId!, validationContent.trim());
+      setValidationContent('');
+      await loadApplication();
+    } catch (err: any) {
+      setError(err.message || t('applications.validation.submitFailed'));
+    }
+  };
+
+  const reviewValidation = async (status: 'validated' | 'rejected') => {
+    try {
+      await api.reviewAdminApplicationValidation(appId!, status, reviewNote || undefined);
+      setReviewNote('');
+      await loadApplication();
+    } catch (err: any) {
+      setError(err.message || t('applications.validation.reviewFailed'));
+    }
+  };
+
+  const reviewChangeRequest = async (requestId: string, status: 'approved' | 'rejected') => {
+    try {
+      await api.reviewAdminAppChangeRequest(requestId, status, reviewNote || undefined);
+      setReviewNote('');
+      await loadApplication();
+    } catch (err: any) {
+      setError(err.message || t('applications.validation.reviewFailed'));
     }
   };
 
@@ -124,6 +188,23 @@ export function ApplicationDetailPage() {
           ← {t('common.back')}
         </Link>
         <h1 className="text-3xl font-bold text-gray-900">{application.name}</h1>
+        <div className="mt-3 flex flex-wrap gap-2">
+          {application.is_official && (
+            <span className="px-2 py-1 rounded-full text-xs bg-purple-100 text-purple-800">
+              {t('applications.badges.official')}
+            </span>
+          )}
+          {application.validation_status === 'validated' && (
+            <span className="px-2 py-1 rounded-full text-xs bg-green-100 text-green-800">
+              {t('applications.badges.validated')}
+            </span>
+          )}
+          {application.validation_status === 'pending' && (
+            <span className="px-2 py-1 rounded-full text-xs bg-yellow-100 text-yellow-800">
+              {t('applications.badges.pendingValidation')}
+            </span>
+          )}
+        </div>
         {application.description && (
           <p className="text-gray-600 mt-2">{application.description}</p>
         )}
@@ -170,6 +251,34 @@ export function ApplicationDetailPage() {
               </div>
 
               <div>
+                <label htmlFor="edit-app-creator-name" className="block text-sm font-medium text-gray-700 mb-2">
+                  {t('applications.form.creatorName')}
+                </label>
+                <input
+                  id="edit-app-creator-name"
+                  type="text"
+                  value={formData.creator_name}
+                  onChange={(e) => setFormData({ ...formData, creator_name: e.target.value })}
+                  disabled={!isAdmin}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
+                />
+              </div>
+
+              {isAdmin && (
+                <div className="flex items-center gap-2">
+                  <input
+                    id="edit-app-is-official"
+                    type="checkbox"
+                    checked={formData.is_official}
+                    onChange={(e) => setFormData({ ...formData, is_official: e.target.checked })}
+                  />
+                  <label htmlFor="edit-app-is-official" className="text-sm text-gray-700">
+                    {t('applications.form.isOfficial')}
+                  </label>
+                </div>
+              )}
+
+              <div>
                 <label htmlFor="edit-app-redirect-uris" className="block text-sm font-medium text-gray-700 mb-2">
                   {t('applications.form.redirectUris')}
                 </label>
@@ -206,6 +315,22 @@ export function ApplicationDetailPage() {
                 </div>
               </div>
 
+              {isAdmin && (
+                <div>
+                  <label htmlFor="edit-app-custom-scopes" className="block text-sm font-medium text-gray-700 mb-2">
+                    {t('applications.form.customScopes')}
+                  </label>
+                  <input
+                    id="edit-app-custom-scopes"
+                    type="text"
+                    value={formData.custom_scopes}
+                    onChange={(e) => setFormData({ ...formData, custom_scopes: e.target.value })}
+                    placeholder={t('applications.form.customScopesPlaceholder')}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              )}
+
               <button
                 type="submit"
                 disabled={saving}
@@ -213,7 +338,110 @@ export function ApplicationDetailPage() {
               >
                 {saving ? t('common.loading') : t('common.save')}
               </button>
+
+              {application.validation_status === 'validated' && !isAdmin && (
+                <div>
+                  <label htmlFor="edit-submission-note" className="block text-sm font-medium text-gray-700 mb-2">
+                    {t('applications.validation.submissionNote')}
+                  </label>
+                  <textarea
+                    id="edit-submission-note"
+                    value={formData.submission_note}
+                    onChange={(e) => setFormData({ ...formData, submission_note: e.target.value })}
+                    rows={2}
+                    placeholder={t('applications.validation.submissionNotePlaceholder')}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              )}
             </form>
+          </div>
+        )}
+
+        <div className="bg-white rounded-lg shadow p-6">
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">{t('applications.validation.title')}</h2>
+          <p className="text-sm text-gray-600 mb-3">
+            {t('applications.validation.currentStatus')}: {application.validation_status || 'unverified'}
+          </p>
+
+          {!isAdmin && (
+            <div className="space-y-3">
+              <textarea
+                value={validationContent}
+                onChange={(e) => setValidationContent(e.target.value)}
+                rows={3}
+                placeholder={t('applications.validation.contentPlaceholder')}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <button
+                onClick={submitValidationRequest}
+                className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
+              >
+                {t('applications.validation.submit')}
+              </button>
+            </div>
+          )}
+
+          {isAdmin && application.validation_status === 'pending' && (
+            <div className="space-y-3 mt-4">
+              <p className="text-sm text-gray-700 whitespace-pre-wrap">{application.validation_submission || '-'}</p>
+              <textarea
+                value={reviewNote}
+                onChange={(e) => setReviewNote(e.target.value)}
+                rows={2}
+                placeholder={t('applications.validation.reviewNotePlaceholder')}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <div className="flex gap-2">
+                <button
+                  onClick={() => reviewValidation('validated')}
+                  className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+                >
+                  {t('applications.validation.approve')}
+                </button>
+                <button
+                  onClick={() => reviewValidation('rejected')}
+                  className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+                >
+                  {t('applications.validation.reject')}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {changeRequests.length > 0 && (
+          <div className="bg-white rounded-lg shadow p-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">{t('applications.validation.changeRequests')}</h2>
+            <div className="space-y-4">
+              {changeRequests.map((request) => (
+                <div key={request.id} className="border border-gray-200 rounded p-4">
+                  <p className="text-sm text-gray-600 mb-2">
+                    {t('applications.validation.requestStatus')}: {request.status}
+                  </p>
+                  {request.submission_note && (
+                    <p className="text-sm text-gray-700 mb-2">{request.submission_note}</p>
+                  )}
+                  <pre className="bg-gray-50 p-2 rounded text-xs overflow-x-auto">{JSON.stringify(request.payload, null, 2)}</pre>
+                  {isAdmin && request.status === 'pending' && (
+                    <div className="mt-3 flex gap-2">
+                      <button
+                        onClick={() => reviewChangeRequest(request.id, 'approved')}
+                        className="px-3 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+                      >
+                        {t('applications.validation.approve')}
+                      </button>
+                      <button
+                        onClick={() => reviewChangeRequest(request.id, 'rejected')}
+                        className="px-3 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+                      >
+                        {t('applications.validation.reject')}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
         )}
 
@@ -300,6 +528,13 @@ export function ApplicationDetailPage() {
                   </span>
                 ))}
               </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                {t('applications.creator')}
+              </label>
+              <p className="text-gray-900">{application.creator_name || '-'}</p>
             </div>
 
             <div>

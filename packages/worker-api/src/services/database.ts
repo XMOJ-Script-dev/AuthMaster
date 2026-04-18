@@ -12,6 +12,9 @@ import {
   AdminApplicationListItem,
   AdminAuditAction,
   AdminAuditLogItem,
+  AppValidationStatus,
+  AppChangeRequestItem,
+  AppChangeRequestStatus,
 } from '@authmaster/shared';
 import { Env } from '../types';
 
@@ -248,6 +251,8 @@ export class Database {
     appSecret: string,
     name: string,
     description: string | undefined,
+    creatorName: string,
+    isOfficial: boolean,
     redirectUris: string[],
     scopes: string[]
   ): Promise<Application> {
@@ -256,7 +261,21 @@ export class Database {
 
     await this.db
       .prepare(
-        'INSERT INTO applications (id, user_id, app_id, app_secret, name, description, redirect_uris, scopes, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+        `INSERT INTO applications (
+          id,
+          user_id,
+          app_id,
+          app_secret,
+          name,
+          description,
+          creator_name,
+          is_official,
+          validation_status,
+          redirect_uris,
+          scopes,
+          created_at,
+          updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
       )
       .bind(
         id,
@@ -265,6 +284,9 @@ export class Database {
         appSecret,
         name,
         description || null,
+        creatorName,
+        isOfficial ? 1 : 0,
+        isOfficial ? 'validated' : 'unverified',
         JSON.stringify(redirectUris),
         JSON.stringify(scopes),
         now,
@@ -279,6 +301,14 @@ export class Database {
       app_secret: appSecret,
       name,
       description,
+      creator_name: creatorName,
+      is_official: isOfficial,
+      validation_status: isOfficial ? 'validated' : 'unverified',
+      validation_submission: undefined,
+      validation_submitted_at: undefined,
+      validation_review_note: undefined,
+      validation_reviewed_at: undefined,
+      validation_reviewed_by: undefined,
       redirect_uris: redirectUris,
       scopes,
       is_blocked: false,
@@ -301,6 +331,14 @@ export class Database {
 
     return {
       ...result,
+      creator_name: result.creator_name || result.name,
+      is_official: !!result.is_official,
+      validation_status: (result.validation_status || 'unverified') as AppValidationStatus,
+      validation_submission: result.validation_submission || undefined,
+      validation_submitted_at: result.validation_submitted_at || undefined,
+      validation_review_note: result.validation_review_note || undefined,
+      validation_reviewed_at: result.validation_reviewed_at || undefined,
+      validation_reviewed_by: result.validation_reviewed_by || undefined,
       redirect_uris: JSON.parse(result.redirect_uris),
       scopes: JSON.parse(result.scopes),
       is_blocked: !!result.is_blocked,
@@ -319,6 +357,14 @@ export class Database {
 
     return results.results.map(app => ({
       ...app,
+      creator_name: app.creator_name || app.name,
+      is_official: !!app.is_official,
+      validation_status: (app.validation_status || 'unverified') as AppValidationStatus,
+      validation_submission: app.validation_submission || undefined,
+      validation_submitted_at: app.validation_submitted_at || undefined,
+      validation_review_note: app.validation_review_note || undefined,
+      validation_reviewed_at: app.validation_reviewed_at || undefined,
+      validation_reviewed_by: app.validation_reviewed_by || undefined,
       redirect_uris: JSON.parse(app.redirect_uris),
       scopes: JSON.parse(app.scopes),
       is_blocked: !!app.is_blocked,
@@ -348,6 +394,14 @@ export class Database {
 
     return {
       ...result,
+      creator_name: result.creator_name || result.name,
+      is_official: !!result.is_official,
+      validation_status: (result.validation_status || 'unverified') as AppValidationStatus,
+      validation_submission: result.validation_submission || undefined,
+      validation_submitted_at: result.validation_submitted_at || undefined,
+      validation_review_note: result.validation_review_note || undefined,
+      validation_reviewed_at: result.validation_reviewed_at || undefined,
+      validation_reviewed_by: result.validation_reviewed_by || undefined,
       redirect_uris: JSON.parse(result.redirect_uris),
       scopes: JSON.parse(result.scopes),
       is_blocked: !!result.is_blocked,
@@ -397,6 +451,11 @@ export class Database {
         app.app_id,
         app.name,
         app.description,
+        app.creator_name,
+        app.is_official,
+        app.validation_status,
+        app.validation_submitted_at,
+        app.validation_reviewed_at,
         app.user_id AS owner_user_id,
         usr.email AS owner_email,
         app.redirect_uris,
@@ -437,6 +496,11 @@ export class Database {
         app_id: app.app_id,
         name: app.name,
         description: app.description || undefined,
+        creator_name: app.creator_name || app.name,
+        is_official: !!app.is_official,
+        validation_status: (app.validation_status || 'unverified') as AppValidationStatus,
+        validation_submitted_at: app.validation_submitted_at || undefined,
+        validation_reviewed_at: app.validation_reviewed_at || undefined,
         owner_user_id: app.owner_user_id,
         owner_email: app.owner_email,
         redirect_uris: JSON.parse(app.redirect_uris),
@@ -606,6 +670,8 @@ export class Database {
     appId: string,
     name: string,
     description: string | undefined,
+    creatorName: string | undefined,
+    isOfficial: boolean | undefined,
     redirectUris: string[],
     scopes: string[]
   ): Promise<Application | null> {
@@ -613,12 +679,229 @@ export class Database {
 
     await this.db
       .prepare(
-        'UPDATE applications SET name = ?, description = ?, redirect_uris = ?, scopes = ?, updated_at = ? WHERE app_id = ?'
+        `UPDATE applications
+         SET name = ?,
+             description = ?,
+             creator_name = COALESCE(?, creator_name),
+             is_official = COALESCE(?, is_official),
+             redirect_uris = ?,
+             scopes = ?,
+             updated_at = ?
+         WHERE app_id = ?`
       )
-      .bind(name, description || null, JSON.stringify(redirectUris), JSON.stringify(scopes), now, appId)
+      .bind(
+        name,
+        description || null,
+        creatorName || null,
+        typeof isOfficial === 'boolean' ? (isOfficial ? 1 : 0) : null,
+        JSON.stringify(redirectUris),
+        JSON.stringify(scopes),
+        now,
+        appId
+      )
       .run();
 
     return this.getApplicationByAppId(appId);
+  }
+
+  async submitValidationRequest(appId: string, content: string): Promise<void> {
+    const now = new Date().toISOString();
+
+    await this.db
+      .prepare(
+        `UPDATE applications
+         SET validation_status = 'pending',
+             validation_submission = ?,
+             validation_submitted_at = ?,
+             validation_review_note = NULL,
+             validation_reviewed_at = NULL,
+             validation_reviewed_by = NULL,
+             updated_at = ?
+         WHERE app_id = ?`
+      )
+      .bind(content, now, now, appId)
+      .run();
+  }
+
+  async reviewValidationRequest(
+    appId: string,
+    status: Extract<AppValidationStatus, 'validated' | 'rejected'>,
+    reviewNote: string | undefined,
+    reviewedByUserId: string
+  ): Promise<void> {
+    const now = new Date().toISOString();
+
+    await this.db
+      .prepare(
+        `UPDATE applications
+         SET validation_status = ?,
+             validation_review_note = ?,
+             validation_reviewed_at = ?,
+             validation_reviewed_by = ?,
+             updated_at = ?
+         WHERE app_id = ?`
+      )
+      .bind(status, reviewNote || null, now, reviewedByUserId, now, appId)
+      .run();
+  }
+
+  async createAppChangeRequest(input: {
+    app_id: string;
+    submitted_by_user_id: string;
+    payload: Record<string, unknown>;
+    submission_note?: string;
+  }): Promise<AppChangeRequestItem> {
+    const id = crypto.randomUUID();
+    const now = new Date().toISOString();
+
+    await this.db
+      .prepare(
+        `INSERT INTO app_change_requests (
+          id,
+          app_id,
+          submitted_by_user_id,
+          payload,
+          submission_note,
+          status,
+          created_at,
+          updated_at
+        ) VALUES (?, ?, ?, ?, ?, 'pending', ?, ?)`
+      )
+      .bind(id, input.app_id, input.submitted_by_user_id, JSON.stringify(input.payload), input.submission_note || null, now, now)
+      .run();
+
+    return {
+      id,
+      app_id: input.app_id,
+      submitted_by_user_id: input.submitted_by_user_id,
+      payload: input.payload,
+      submission_note: input.submission_note,
+      status: 'pending',
+      created_at: now,
+      updated_at: now,
+    };
+  }
+
+  async listAppChangeRequestsByAppId(appId: string): Promise<AppChangeRequestItem[]> {
+    const results = await this.db
+      .prepare('SELECT * FROM app_change_requests WHERE app_id = ? ORDER BY created_at DESC')
+      .bind(appId)
+      .all<any>();
+
+    return results.results.map(row => ({
+      id: row.id,
+      app_id: row.app_id,
+      submitted_by_user_id: row.submitted_by_user_id,
+      payload: JSON.parse(row.payload),
+      submission_note: row.submission_note || undefined,
+      status: row.status as AppChangeRequestStatus,
+      review_note: row.review_note || undefined,
+      reviewed_by_user_id: row.reviewed_by_user_id || undefined,
+      reviewed_at: row.reviewed_at || undefined,
+      created_at: row.created_at,
+      updated_at: row.updated_at,
+    }));
+  }
+
+  async listAppChangeRequestsForAdmin(options: {
+    limit: number;
+    offset: number;
+    app_id?: string;
+    status?: AppChangeRequestStatus;
+  }): Promise<{ requests: AppChangeRequestItem[]; total: number }> {
+    const whereClauses: string[] = [];
+    const whereBindings: any[] = [];
+
+    if (options.app_id) {
+      whereClauses.push('app_id = ?');
+      whereBindings.push(options.app_id);
+    }
+    if (options.status) {
+      whereClauses.push('status = ?');
+      whereBindings.push(options.status);
+    }
+
+    const whereSql = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
+
+    const listResults = await this.db
+      .prepare(
+        `SELECT *
+         FROM app_change_requests
+         ${whereSql}
+         ORDER BY created_at DESC
+         LIMIT ? OFFSET ?`
+      )
+      .bind(...whereBindings, options.limit, options.offset)
+      .all<any>();
+
+    const countResult = await this.db
+      .prepare(`SELECT COUNT(*) AS total FROM app_change_requests ${whereSql}`)
+      .bind(...whereBindings)
+      .first<{ total: number | string }>();
+
+    return {
+      requests: listResults.results.map(row => ({
+        id: row.id,
+        app_id: row.app_id,
+        submitted_by_user_id: row.submitted_by_user_id,
+        payload: JSON.parse(row.payload),
+        submission_note: row.submission_note || undefined,
+        status: row.status as AppChangeRequestStatus,
+        review_note: row.review_note || undefined,
+        reviewed_by_user_id: row.reviewed_by_user_id || undefined,
+        reviewed_at: row.reviewed_at || undefined,
+        created_at: row.created_at,
+        updated_at: row.updated_at,
+      })),
+      total: Number(countResult?.total || 0),
+    };
+  }
+
+  async getAppChangeRequestById(requestId: string): Promise<AppChangeRequestItem | null> {
+    const row = await this.db
+      .prepare('SELECT * FROM app_change_requests WHERE id = ?')
+      .bind(requestId)
+      .first<any>();
+
+    if (!row) {
+      return null;
+    }
+
+    return {
+      id: row.id,
+      app_id: row.app_id,
+      submitted_by_user_id: row.submitted_by_user_id,
+      payload: JSON.parse(row.payload),
+      submission_note: row.submission_note || undefined,
+      status: row.status as AppChangeRequestStatus,
+      review_note: row.review_note || undefined,
+      reviewed_by_user_id: row.reviewed_by_user_id || undefined,
+      reviewed_at: row.reviewed_at || undefined,
+      created_at: row.created_at,
+      updated_at: row.updated_at,
+    };
+  }
+
+  async reviewAppChangeRequest(
+    requestId: string,
+    status: Extract<AppChangeRequestStatus, 'approved' | 'rejected'>,
+    reviewNote: string | undefined,
+    reviewedByUserId: string
+  ): Promise<void> {
+    const now = new Date().toISOString();
+
+    await this.db
+      .prepare(
+        `UPDATE app_change_requests
+         SET status = ?,
+             review_note = ?,
+             reviewed_by_user_id = ?,
+             reviewed_at = ?,
+             updated_at = ?
+         WHERE id = ?`
+      )
+      .bind(status, reviewNote || null, reviewedByUserId, now, now, requestId)
+      .run();
   }
 
   async deleteApplication(appId: string): Promise<void> {

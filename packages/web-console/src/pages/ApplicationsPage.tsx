@@ -17,7 +17,10 @@ export function ApplicationsPage() {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
+    creator_name: '',
+    is_official: false,
     redirect_uris: '',
+    custom_scopes: '',
     scopes: ['openid', 'profile', 'email'],
   });
   const [error, setError] = useState('');
@@ -49,15 +52,29 @@ export function ApplicationsPage() {
     }
 
     try {
+      const scopedValues = user?.role === 'admin' && formData.custom_scopes.trim().length > 0
+        ? formData.custom_scopes.split(',').map(s => s.trim()).filter(Boolean)
+        : formData.scopes;
+
       const result = await api.createApplication({
         name: formData.name,
         description: formData.description || undefined,
+        creator_name: formData.creator_name,
+        is_official: user?.role === 'admin' ? formData.is_official : undefined,
         redirect_uris: formData.redirect_uris.split(',').map(s => s.trim()),
-        scopes: formData.scopes,
+        scopes: scopedValues,
       });
       setCreatedApp(result);
       setShowForm(false);
-      setFormData({ name: '', description: '', redirect_uris: '', scopes: ['openid', 'profile', 'email'] });
+      setFormData({
+        name: '',
+        description: '',
+        creator_name: '',
+        is_official: false,
+        redirect_uris: '',
+        custom_scopes: '',
+        scopes: ['openid', 'profile', 'email'],
+      });
       loadApplications();
     } catch (err: any) {
       setError(err.message);
@@ -194,6 +211,35 @@ export function ApplicationsPage() {
             </div>
 
             <div>
+              <label htmlFor="app-creator-name" className="block text-sm font-medium text-gray-700 mb-2">
+                {t('applications.form.creatorName')}
+              </label>
+              <input
+                id="app-creator-name"
+                type="text"
+                value={formData.creator_name}
+                onChange={(e) => setFormData({ ...formData, creator_name: e.target.value })}
+                required
+                placeholder={t('applications.form.creatorNamePlaceholder')}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            {user?.role === 'admin' && (
+              <div className="flex items-center gap-2">
+                <input
+                  id="app-is-official"
+                  type="checkbox"
+                  checked={formData.is_official}
+                  onChange={(e) => setFormData({ ...formData, is_official: e.target.checked })}
+                />
+                <label htmlFor="app-is-official" className="text-sm text-gray-700">
+                  {t('applications.form.isOfficial')}
+                </label>
+              </div>
+            )}
+
+            <div>
               <label htmlFor="app-redirect-uris" className="block text-sm font-medium text-gray-700 mb-2">
                 {t('applications.form.redirectUris')}
               </label>
@@ -232,6 +278,22 @@ export function ApplicationsPage() {
               <p className="text-xs text-gray-500 mt-2">{t('applications.form.scopesHelp')}</p>
             </div>
 
+            {user?.role === 'admin' && (
+              <div>
+                <label htmlFor="app-custom-scopes" className="block text-sm font-medium text-gray-700 mb-2">
+                  {t('applications.form.customScopes')}
+                </label>
+                <input
+                  id="app-custom-scopes"
+                  type="text"
+                  value={formData.custom_scopes}
+                  onChange={(e) => setFormData({ ...formData, custom_scopes: e.target.value })}
+                  placeholder={t('applications.form.customScopesPlaceholder')}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            )}
+
             <button
               type="submit"
               className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md font-semibold"
@@ -263,8 +325,30 @@ export function ApplicationsPage() {
               <div className="flex justify-between items-start mb-4">
                 <div>
                   <h3 className="text-xl font-semibold text-gray-900">{app.name}</h3>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {app.is_official && (
+                      <span className="px-2 py-1 rounded-full text-xs bg-purple-100 text-purple-800">
+                        {t('applications.badges.official')}
+                      </span>
+                    )}
+                    {app.validation_status === 'validated' && (
+                      <span className="px-2 py-1 rounded-full text-xs bg-green-100 text-green-800">
+                        {t('applications.badges.validated')}
+                      </span>
+                    )}
+                    {app.validation_status === 'pending' && (
+                      <span className="px-2 py-1 rounded-full text-xs bg-yellow-100 text-yellow-800">
+                        {t('applications.badges.pendingValidation')}
+                      </span>
+                    )}
+                  </div>
                   {app.description && (
                     <p className="text-gray-600 mt-1">{app.description}</p>
+                  )}
+                  {app.creator_name && (
+                    <p className="text-xs text-gray-500 mt-2">
+                      {t('applications.creator')}: {app.creator_name}
+                    </p>
                   )}
                 </div>
                 <div className="flex gap-2">

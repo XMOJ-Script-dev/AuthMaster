@@ -39,7 +39,7 @@ export function AuthorizePage() {
     }
 
     try {
-      const app = await api.getApplication(clientId);
+      const app = await api.getPublicApplication(clientId);
       setApplication(app);
     } catch (err: any) {
       setError(t('authorize.invalidClient'));
@@ -135,6 +135,18 @@ export function AuthorizePage() {
           <div className="bg-white rounded-lg shadow-sm p-4 mb-4">
             <div className="text-4xl mb-2">🔐</div>
             <h1 className="text-2xl font-bold text-gray-900">{application.name}</h1>
+            <div className="mt-2 flex justify-center gap-2">
+              {application.is_official && (
+                <span className="px-2 py-1 rounded-full text-xs bg-purple-100 text-purple-800">
+                  {t('applications.badges.official')}
+                </span>
+              )}
+              {application.validation_status === 'validated' && (
+                <span className="px-2 py-1 rounded-full text-xs bg-green-100 text-green-800">
+                  {t('applications.badges.validated')}
+                </span>
+              )}
+            </div>
             {application.description && (
               <p className="text-sm text-gray-600 mt-1">{application.description}</p>
             )}

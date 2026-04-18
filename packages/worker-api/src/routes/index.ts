@@ -16,6 +16,10 @@ import {
   authorizeSchema,
   tokenSchema,
   bindXmojSchema,
+  submitValidationSchema,
+  adminReviewValidationSchema,
+  adminListAppChangeRequestsQuerySchema,
+  adminReviewAppChangeRequestSchema,
   adminListUsersQuerySchema,
   adminUpdateUserRoleSchema,
   adminUpdateUserStatusSchema,
@@ -119,6 +123,21 @@ export function setupRoutes(router: Router): void {
     }
   });
 
+  router.add('GET', '/api/v1/public/apps/:appId', async (request, env, params) => {
+    try {
+      const appService = new AppService(env);
+      const app = await appService.getApplication(params.appId);
+
+      if (!app) {
+        return jsonResponse({ error: 'Application not found' }, HTTP_STATUS.NOT_FOUND);
+      }
+
+      return jsonResponse(app, HTTP_STATUS.OK);
+    } catch (error: any) {
+      return jsonResponse({ error: error.message }, HTTP_STATUS.BAD_REQUEST);
+    }
+  });
+
   // Application routes
   router.add('POST', '/api/v1/apps/register', async (request, env) => {
     const authResult = await requireAuth(request, env);
@@ -136,7 +155,7 @@ export function setupRoutes(router: Router): void {
       const input = createApplicationSchema.parse(body);
 
       const appService = new AppService(env);
-      const result = await appService.createApplication(authResult.userId, input);
+      const result = await appService.createApplication(authResult.userId, authResult.role, input);
 
       return jsonResponse(result, HTTP_STATUS.CREATED);
     } catch (error: any) {
@@ -207,6 +226,51 @@ export function setupRoutes(router: Router): void {
       const app = await appService.updateApplication(params.appId, authResult.userId, authResult.role, input);
 
       return jsonResponse(app, HTTP_STATUS.OK);
+    } catch (error: any) {
+      return jsonResponse({ error: error.message }, HTTP_STATUS.BAD_REQUEST);
+    }
+  });
+
+  router.add('POST', '/api/v1/apps/:appId/validation-request', async (request, env, params) => {
+    const authResult = await requireAuth(request, env);
+    if (!isAuthContext(authResult)) {
+      return authResult;
+    }
+
+    const roleError = requireRole(authResult, ['merchant', 'admin']);
+    if (roleError) {
+      return roleError;
+    }
+
+    try {
+      const body = await request.json();
+      const input = submitValidationSchema.parse(body);
+
+      const appService = new AppService(env);
+      await appService.submitValidationRequest(params.appId, authResult.userId, authResult.role, input.content);
+
+      return jsonResponse({ message: 'Validation request submitted' }, HTTP_STATUS.OK);
+    } catch (error: any) {
+      return jsonResponse({ error: error.message }, HTTP_STATUS.BAD_REQUEST);
+    }
+  });
+
+  router.add('GET', '/api/v1/apps/:appId/change-requests', async (request, env, params) => {
+    const authResult = await requireAuth(request, env);
+    if (!isAuthContext(authResult)) {
+      return authResult;
+    }
+
+    const roleError = requireRole(authResult, ['merchant', 'admin']);
+    if (roleError) {
+      return roleError;
+    }
+
+    try {
+      const appService = new AppService(env);
+      const requests = await appService.getChangeRequestsByApp(params.appId, authResult.userId, authResult.role);
+
+      return jsonResponse({ requests }, HTTP_STATUS.OK);
     } catch (error: any) {
       return jsonResponse({ error: error.message }, HTTP_STATUS.BAD_REQUEST);
     }
@@ -472,6 +536,142 @@ export function setupRoutes(router: Router): void {
       });
 
       return jsonResponse({ application: updatedApp }, HTTP_STATUS.OK);
+    } catch (error: any) {
+      return jsonResponse({ error: error.message }, HTTP_STATUS.BAD_REQUEST);
+    }
+  });
+
+  router.add('PATCH', '/api/v1/admin/apps/:appId/validation-review', async (request, env, params) => {
+    const authResult = await requireAuth(request, env);
+    if (!isAuthContext(authResult)) {
+      return authResult;
+    }
+
+    const adminError = requireAdmin(authResult);
+    if (adminError) {
+      return adminError;
+    }
+
+    try {
+      const body = await request.json();
+      const input = adminReviewValidationSchema.parse(body);
+      const db = new Database(env.DB);
+      const beforeApp = await db.getApplicationByAppIdWithOwner(params.appId);
+
+      if (!beforeApp) {
+        return jsonResponse({ error: 'Application not found' }, HTTP_STATUS.NOT_FOUND);
+      }
+
+      await db.reviewValidationRequest(params.appId, input.status, input.review_note, authResult.userId);
+      const updatedApp = await db.getApplicationByAppIdWithOwner(params.appId);
+
+      await db.createAuditLog({
+        actor_user_id: authResult.userId,
+        actor_role: authResult.role,
+        action: 'app.validation.review',
+        target_type: 'application',
+        target_id: params.appId,
+        reason: input.review_note,
+        before_data: {
+          validation_status: beforeApp.validation_status,
+          validation_submission: beforeApp.validation_submission,
+        },
+        after_data: {
+          validation_status: updatedApp?.validation_status,
+          validation_review_note: updatedApp?.validation_review_note,
+        },
+        ...getAdminRequestMeta(request),
+      });
+
+      return jsonResponse({ application: updatedApp }, HTTP_STATUS.OK);
+    } catch (error: any) {
+      return jsonResponse({ error: error.message }, HTTP_STATUS.BAD_REQUEST);
+    }
+  });
+
+  router.add('GET', '/api/v1/admin/app-change-requests', async (request, env) => {
+    const authResult = await requireAuth(request, env);
+    if (!isAuthContext(authResult)) {
+      return authResult;
+    }
+
+    const adminError = requireAdmin(authResult);
+    if (adminError) {
+      return adminError;
+    }
+
+    try {
+      const url = new URL(request.url);
+      const query = adminListAppChangeRequestsQuerySchema.parse(Object.fromEntries(url.searchParams.entries()));
+      const db = new Database(env.DB);
+      const result = await db.listAppChangeRequestsForAdmin(query);
+      return jsonResponse(
+        {
+          requests: result.requests,
+          total: result.total,
+          limit: query.limit,
+          offset: query.offset,
+        },
+        HTTP_STATUS.OK
+      );
+    } catch (error: any) {
+      return jsonResponse({ error: error.message }, HTTP_STATUS.BAD_REQUEST);
+    }
+  });
+
+  router.add('PATCH', '/api/v1/admin/app-change-requests/:requestId/review', async (request, env, params) => {
+    const authResult = await requireAuth(request, env);
+    if (!isAuthContext(authResult)) {
+      return authResult;
+    }
+
+    const adminError = requireAdmin(authResult);
+    if (adminError) {
+      return adminError;
+    }
+
+    try {
+      const body = await request.json();
+      const input = adminReviewAppChangeRequestSchema.parse(body);
+      const db = new Database(env.DB);
+      const appService = new AppService(env);
+      const beforeRequest = await db.getAppChangeRequestById(params.requestId);
+
+      if (!beforeRequest) {
+        return jsonResponse({ error: 'Change request not found' }, HTTP_STATUS.NOT_FOUND);
+      }
+
+      if (beforeRequest.status !== 'pending') {
+        return jsonResponse({ error: 'Change request already reviewed' }, HTTP_STATUS.BAD_REQUEST);
+      }
+
+      await db.reviewAppChangeRequest(params.requestId, input.status, input.review_note, authResult.userId);
+
+      let application: any = null;
+      if (input.status === 'approved') {
+        application = await appService.applyApprovedChangeRequest(params.requestId);
+      }
+
+      const afterRequest = await db.getAppChangeRequestById(params.requestId);
+
+      await db.createAuditLog({
+        actor_user_id: authResult.userId,
+        actor_role: authResult.role,
+        action: 'app.change.review',
+        target_type: 'application',
+        target_id: beforeRequest.app_id,
+        reason: input.review_note,
+        before_data: {
+          request_status: beforeRequest.status,
+          payload: beforeRequest.payload,
+        },
+        after_data: {
+          request_status: afterRequest?.status,
+        },
+        ...getAdminRequestMeta(request),
+      });
+
+      return jsonResponse({ request: afterRequest, application }, HTTP_STATUS.OK);
     } catch (error: any) {
       return jsonResponse({ error: error.message }, HTTP_STATUS.BAD_REQUEST);
     }

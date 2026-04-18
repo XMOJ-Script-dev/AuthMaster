@@ -152,6 +152,12 @@
   },
   "applications": {
     "title": "Applications",
+    "creator": "Creator",
+    "badges": {
+      "official": "Official App",
+      "validated": "Validated",
+      "pendingValidation": "Validation Pending"
+    },
     "createNew": "Create Application",
     "noApps": "No applications yet",
     "noPermission": "Your role cannot create applications.",
@@ -164,11 +170,16 @@
       "namePlaceholder": "My App",
       "description": "Description",
       "descriptionPlaceholder": "Optional description",
+      "creatorName": "Creator Name",
+      "creatorNamePlaceholder": "Enter creator name",
+      "isOfficial": "Mark as official app (admin only)",
       "redirectUris": "Redirect URIs",
       "redirectUrisPlaceholder": "https://example.com/callback",
       "redirectUrisHelp": "Comma-separated list of allowed redirect URIs",
       "scopes": "Scopes",
       "scopesHelp": "Comma-separated list of OAuth scopes",
+      "customScopes": "Custom Scopes (Admin)",
+      "customScopesPlaceholder": "e.g. openid,profile,email,internal:ops",
       "selectScopeRequired": "Please select at least one scope"
     },
     "detail": {
@@ -191,6 +202,23 @@
       "deleteWarning": "This action cannot be undone. All tokens will be invalidated.",
       "deleting": "Deleting...",
       "updateFailed": "Failed to update application"
+    },
+    "validation": {
+      "title": "Validation and Review",
+      "currentStatus": "Current status",
+      "contentPlaceholder": "Describe your validation request (use case, website, privacy policy, etc.)",
+      "submit": "Submit Validation Request",
+      "approve": "Approve",
+      "reject": "Reject",
+      "contentRequired": "Please enter validation request content",
+      "submitFailed": "Failed to submit validation request",
+      "reviewFailed": "Review failed",
+      "submissionNote": "Change note (will be reviewed by admin)",
+      "submissionNotePlaceholder": "Explain why this change is needed",
+      "updatePendingReview": "This validated app update has been submitted for admin review",
+      "changeRequests": "Change Review Records",
+      "requestStatus": "Request status",
+      "reviewNotePlaceholder": "Review note (optional)"
     }
   },
   "authorize": {

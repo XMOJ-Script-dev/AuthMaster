@@ -2,8 +2,6 @@
 
 开源的 OAuth2.0/OIDC 认证服务器，部署在 Cloudflare 上。
 
-Demo: [Click Here](https://authmaster.pages.dev/)
-
 ## 特性
 
 - ✅ 完整的 OAuth2.0 和 OpenID Connect 支持
@@ -127,6 +125,7 @@ npm run deploy
 
 ## 项目结构
 
+```
 authmaster/
 ├── packages/
 │   ├── worker-api/       # Cloudflare Workers 后端
@@ -134,6 +133,7 @@ authmaster/
 │   └── shared/           # 共享类型和工具
 ├── docs/                 # 文档
 └── README.md
+```
 
 ## 文档
 

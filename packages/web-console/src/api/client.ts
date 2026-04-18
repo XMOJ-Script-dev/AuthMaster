@@ -10,6 +10,39 @@ export interface AuthorizedAppItem {
   active_tokens: number;
 }
 
+export type AppValidationStatus = 'unverified' | 'pending' | 'validated' | 'rejected';
+export type AppChangeRequestStatus = 'pending' | 'approved' | 'rejected';
+
+export interface ApplicationItem {
+  id: string;
+  app_id: string;
+  name: string;
+  description?: string;
+  creator_name?: string;
+  is_official?: boolean;
+  validation_status?: AppValidationStatus;
+  validation_submitted_at?: string;
+  validation_review_note?: string;
+  validation_reviewed_at?: string;
+  redirect_uris: string[];
+  scopes: string[];
+  created_at: string;
+}
+
+export interface AppChangeRequestItem {
+  id: string;
+  app_id: string;
+  submitted_by_user_id: string;
+  payload: Record<string, unknown>;
+  submission_note?: string;
+  status: AppChangeRequestStatus;
+  review_note?: string;
+  reviewed_by_user_id?: string;
+  reviewed_at?: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export type AdminAccountRole = 'user' | 'merchant' | 'admin';
 export type AdminAccountStatus = 'active' | 'disabled';
 
@@ -33,6 +66,11 @@ export interface AdminApplicationListItem {
   app_id: string;
   name: string;
   description?: string;
+  creator_name: string;
+  is_official: boolean;
+  validation_status: AppValidationStatus;
+  validation_submitted_at?: string;
+  validation_reviewed_at?: string;
   owner_user_id: string;
   owner_email: string;
   redirect_uris: string[];
@@ -58,7 +96,9 @@ export type AdminAuditAction =
   | 'user.status.update'
   | 'app.block.update'
   | 'app.warning.update'
-  | 'app.delete';
+  | 'app.delete'
+  | 'app.validation.review'
+  | 'app.change.review';
 
 export interface AdminAuditLogItem {
   id: string;
@@ -163,6 +203,8 @@ class ApiClient {
   async createApplication(data: {
     name: string;
     description?: string;
+    creator_name: string;
+    is_official?: boolean;
     redirect_uris: string[];
     scopes: string[];
   }) {
@@ -173,13 +215,19 @@ class ApiClient {
   }
 
   async getApplications() {
-    return this.request('/api/v1/apps', {
+    return this.request<ApplicationItem[]>('/api/v1/apps', {
       method: 'GET',
     });
   }
 
   async getApplication(appId: string) {
-    return this.request(`/api/v1/apps/${appId}`, {
+    return this.request<ApplicationItem>(`/api/v1/apps/${appId}`, {
+      method: 'GET',
+    });
+  }
+
+  async getPublicApplication(appId: string) {
+    return this.request<ApplicationItem>(`/api/v1/public/apps/${appId}`, {
       method: 'GET',
     });
   }
@@ -192,11 +240,32 @@ class ApiClient {
 
   async updateApplication(
     appId: string,
-    data: { name: string; description?: string; redirect_uris: string[]; scopes: string[] }
+    data: {
+      name: string;
+      description?: string;
+      creator_name?: string;
+      is_official?: boolean;
+      redirect_uris: string[];
+      scopes: string[];
+      submission_note?: string;
+    }
   ) {
-    return this.request(`/api/v1/apps/${appId}`, {
+    return this.request<ApplicationItem | { pending_review: true; request_id: string }>(`/api/v1/apps/${appId}`, {
       method: 'PUT',
       body: JSON.stringify(data),
+    });
+  }
+
+  async submitValidationRequest(appId: string, content: string) {
+    return this.request<{ message: string }>(`/api/v1/apps/${appId}/validation-request`, {
+      method: 'POST',
+      body: JSON.stringify({ content }),
+    });
+  }
+
+  async getAppChangeRequests(appId: string) {
+    return this.request<{ requests: AppChangeRequestItem[] }>(`/api/v1/apps/${appId}/change-requests`, {
+      method: 'GET',
     });
   }
 
@@ -337,6 +406,60 @@ class ApiClient {
       method: 'PATCH',
       body: JSON.stringify({ warning_message }),
     });
+  }
+
+  async reviewAdminApplicationValidation(
+    appId: string,
+    status: 'validated' | 'rejected',
+    review_note?: string
+  ) {
+    return this.request<{ application: AdminApplicationListItem | null }>(`/api/v1/admin/apps/${appId}/validation-review`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status, review_note }),
+    });
+  }
+
+  async getAdminAppChangeRequests(params?: {
+    limit?: number;
+    offset?: number;
+    app_id?: string;
+    status?: AppChangeRequestStatus;
+  }) {
+    const searchParams = new URLSearchParams();
+    if (params?.limit !== undefined) {
+      searchParams.set('limit', String(params.limit));
+    }
+    if (params?.offset !== undefined) {
+      searchParams.set('offset', String(params.offset));
+    }
+    if (params?.app_id) {
+      searchParams.set('app_id', params.app_id);
+    }
+    if (params?.status) {
+      searchParams.set('status', params.status);
+    }
+
+    const suffix = searchParams.toString() ? `?${searchParams.toString()}` : '';
+    return this.request<{ requests: AppChangeRequestItem[]; total: number; limit: number; offset: number }>(
+      `/api/v1/admin/app-change-requests${suffix}`,
+      {
+        method: 'GET',
+      }
+    );
+  }
+
+  async reviewAdminAppChangeRequest(
+    requestId: string,
+    status: 'approved' | 'rejected',
+    review_note?: string
+  ) {
+    return this.request<{ request: AppChangeRequestItem; application?: ApplicationItem | null }>(
+      `/api/v1/admin/app-change-requests/${requestId}/review`,
+      {
+        method: 'PATCH',
+        body: JSON.stringify({ status, review_note }),
+      }
+    );
   }
 
   async deleteAdminApplication(appId: string) {
