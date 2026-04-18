@@ -1,7 +1,9 @@
-import { ReactNode } from 'react';
-import { Navigate } from 'react-router-dom';
+import { ReactNode, useEffect, useState } from 'react';
+import { Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { api } from '../api/client';
 import { useAuth } from '../contexts/AuthContext';
 import { AccountRole } from '@authmaster/shared';
+import { isPasskeyTrusted } from '../utils/passkey';
 
 interface ProtectedRouteProps {
   children: ReactNode;
@@ -10,9 +12,50 @@ interface ProtectedRouteProps {
 
 export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) {
   const { isAuthenticated, user } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [checkingPasskey, setCheckingPasskey] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const verifyPasskey = async () => {
+      if (!isAuthenticated) {
+        setCheckingPasskey(false);
+        return;
+      }
+
+      if (!user?.id || isPasskeyTrusted(user.id) || location.pathname === '/passkey-verification') {
+        setCheckingPasskey(false);
+        return;
+      }
+
+      try {
+        const passkeys = await api.getPasskeys();
+        if (!cancelled && passkeys.passkeys.length > 0) {
+          navigate(`/passkey-verification?mode=login&next=${encodeURIComponent(location.pathname + location.search)}`, { replace: true });
+          return;
+        }
+      } finally {
+        if (!cancelled) {
+          setCheckingPasskey(false);
+        }
+      }
+    };
+
+    verifyPasskey();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isAuthenticated, location.pathname, location.search, navigate, user?.id]);
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
+  }
+
+  if (checkingPasskey) {
+    return <div className="min-h-screen bg-gray-50" />;
   }
 
   if (allowedRoles && user?.role && !allowedRoles.includes(user.role)) {

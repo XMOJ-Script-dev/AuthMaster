@@ -9,8 +9,9 @@ import { DashboardPage } from './pages/DashboardPage';
 import { ApplicationsPage } from './pages/ApplicationsPage';
 import { ApplicationDetailPage } from './pages/ApplicationDetailPage';
 import { AuthorizePage } from './pages/AuthorizePage';
+import { PasskeyVerificationPage } from './pages/PasskeyVerificationPage';
 import { XmojBindingPage } from './pages/XmojBindingPage';
-import { ChangePasswordPage } from './pages/ChangePasswordPage';
+import { AccountSecurityPage } from './pages/AccountSecurityPage';
 import { AdminDashboardPage } from './pages/AdminDashboardPage';
 import { AdminPendingAppsPage } from './pages/AdminPendingAppsPage';
 import { AdminUsersPage } from './pages/AdminUsersPage';
@@ -27,6 +28,7 @@ function App() {
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/authorize" element={<AuthorizePage />} />
+            <Route path="/passkey-verification" element={<PasskeyVerificationPage />} />
             <Route
               path="/dashboard"
               element={
@@ -92,10 +94,18 @@ function App() {
               }
             />
             <Route
+              path="/account-security"
+              element={
+                <ProtectedRoute>
+                  <AccountSecurityPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
               path="/change-password"
               element={
                 <ProtectedRoute>
-                  <ChangePasswordPage />
+                  <AccountSecurityPage />
                 </ProtectedRoute>
               }
             />

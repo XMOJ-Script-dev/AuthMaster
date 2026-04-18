@@ -20,6 +20,7 @@
     "admin": "系统管理",
     "xmojBinding": "XMOJ 绑定",
     "account": "账号",
+    "accountSecurity": "账户安全",
     "changePassword": "修改密码",
     "login": "登录",
     "register": "注册",
@@ -62,6 +63,10 @@
       "password": "密码",
       "submit": "登录",
       "submitting": "登录中...",
+      "passkeySubmit": "使用通行密钥登录",
+      "passkeySubmitting": "通行密钥登录中...",
+      "passkeyEmailRequired": "请先输入邮箱，再使用通行密钥登录",
+      "passkeyFailed": "通行密钥登录失败",
       "noAccount": "还没有账号？",
       "signUp": "注册",
       "failed": "登录失败"
@@ -319,6 +324,16 @@
     "write": "修改你的数据"
   },
   "profile": {
+    "security": {
+      "title": "账户安全",
+      "subtitle": "管理登录密码和通行密钥，提升账号保护等级。",
+      "passwordHint": "建议使用强密码，并定期更新。",
+      "deviceVerificationTitle": "设备验证状态",
+      "deviceVerificationHint": "撤销后，本设备下次登录或敏感操作会再次要求通行密钥验证。",
+      "deviceVerificationStatus": "当前设备已验证",
+      "revokeDeviceVerification": "撤销本设备验证状态",
+      "deviceVerificationRevoked": "已撤销本设备验证状态"
+    },
     "changePassword": {
       "title": "修改密码",
       "currentPassword": "当前密码",
@@ -330,7 +345,50 @@
       "passwordTooShort": "新密码至少需要 8 位",
       "success": "密码修改成功",
       "failed": "修改密码失败"
+    },
+    "passkeys": {
+      "title": "通行密钥",
+      "subtitle": "使用设备自带的安全密钥、指纹或面容识别登录。",
+      "add": "添加通行密钥",
+      "addPrompt": "请输入这个通行密钥的名称",
+      "addSuccess": "通行密钥已添加",
+      "addFailed": "添加通行密钥失败",
+      "renamePrompt": "请输入新的通行密钥名称",
+      "renameSuccess": "通行密钥已更新",
+      "renameFailed": "更新通行密钥失败",
+      "revoke": "撤销设备",
+      "revokeConfirm": "确定要撤销这个设备的通行密钥吗？",
+      "revokeSuccess": "设备已撤销",
+      "revokeFailed": "撤销设备失败",
+      "empty": "当前还没有配置通行密钥。",
+      "loadFailed": "加载通行密钥失败",
+      "deviceType": "设备类型",
+      "backedUp": "是否可备份",
+      "yes": "是",
+      "no": "否",
+      "lastUsed": "上次使用",
+      "neverUsed": "从未使用",
+      "deviceTypes": {
+        "singleDevice": "单设备",
+        "multiDevice": "多设备",
+        "hybrid": "混合设备"
+      }
     }
+  },
+  "passkeyVerification": {
+    "loginTitle": "验证通行密钥",
+    "authorizeTitle": "授权前验证通行密钥",
+    "loginSubtitle": "你的账号已配置通行密钥，请先完成设备验证。",
+    "authorizeSubtitle": "该应用授权需要再次确认你的身份。",
+    "item1": "使用已注册的通行密钥完成身份确认。",
+    "item2": "验证通过后，继续当前登录或授权流程。",
+    "item3": "如果这是你的设备，请正常完成验证。",
+    "account": "账号",
+    "back": "返回上一页",
+    "verify": "使用通行密钥验证",
+    "verifying": "验证中...",
+    "failed": "通行密钥验证失败",
+    "emailRequired": "请输入账号邮箱后再验证"
   },
   "modal": {
     "deleteApp": {
@@ -372,6 +430,7 @@
     "bind": "绑定",
     "binding": "绑定中...",
     "unbind": "解绑",
+    "unbindConfirm": "确定要解绑 XMOJ 账号吗？此操作会移除现有关联。",
     "rebindHint": "已绑定 XMOJ 账号，如需绑定新账号请先解绑。",
     "bindSuccess": "绑定成功，已校验 profile 名称：{{username}}"
   }

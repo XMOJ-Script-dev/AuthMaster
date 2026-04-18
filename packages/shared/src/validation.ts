@@ -21,6 +21,25 @@ export const changePasswordSchema = z.object({
   new_password: z.string().min(8).max(128),
 });
 
+export const passkeyRegisterCompleteSchema = z.object({
+  challenge_id: z.string().min(1),
+  credential: z.record(z.any()),
+  name: z.string().min(1).max(100).optional(),
+});
+
+export const passkeyAuthenticationCompleteSchema = z.object({
+  challenge_id: z.string().min(1),
+  credential: z.record(z.any()),
+});
+
+export const passkeyUpdateSchema = z.object({
+  name: z.string().min(1).max(100),
+});
+
+export const passkeyLoginStartSchema = z.object({
+  email: z.string().email(),
+});
+
 // Application validation schemas
 export const createApplicationSchema = z.object({
   name: z.string().min(1).max(255),
@@ -162,6 +181,10 @@ export type RegisterInput = z.infer<typeof registerSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
 export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
 export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;
+export type PasskeyRegisterCompleteInput = z.infer<typeof passkeyRegisterCompleteSchema>;
+export type PasskeyAuthenticationCompleteInput = z.infer<typeof passkeyAuthenticationCompleteSchema>;
+export type PasskeyUpdateInput = z.infer<typeof passkeyUpdateSchema>;
+export type PasskeyLoginStartInput = z.infer<typeof passkeyLoginStartSchema>;
 export type CreateApplicationInput = z.infer<typeof createApplicationSchema>;
 export type UpdateApplicationInput = z.infer<typeof updateApplicationSchema>;
 export type SubmitValidationInput = z.infer<typeof submitValidationSchema>;

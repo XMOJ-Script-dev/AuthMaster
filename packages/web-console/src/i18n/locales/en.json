@@ -20,6 +20,7 @@
     "admin": "System Admin",
     "xmojBinding": "XMOJ Binding",
     "account": "Account",
+    "accountSecurity": "Account Security",
     "changePassword": "Change Password",
     "login": "Login",
     "register": "Register",
@@ -62,6 +63,10 @@
       "password": "Password",
       "submit": "Sign In",
       "submitting": "Signing in...",
+      "passkeySubmit": "Sign in with Passkey",
+      "passkeySubmitting": "Signing in with passkey...",
+      "passkeyEmailRequired": "Enter your email first to use passkey sign-in",
+      "passkeyFailed": "Passkey sign-in failed",
       "noAccount": "Don't have an account?",
       "signUp": "Sign up",
       "failed": "Login failed"
@@ -319,6 +324,16 @@
     "write": "Modify your data"
   },
   "profile": {
+    "security": {
+      "title": "Account Security",
+      "subtitle": "Manage your password and passkeys to strengthen account protection.",
+      "passwordHint": "Use a strong password and update it regularly.",
+      "deviceVerificationTitle": "Device Verification Status",
+      "deviceVerificationHint": "After revoking, this device will require passkey verification again on next sign-in or sensitive action.",
+      "deviceVerificationStatus": "This device is verified",
+      "revokeDeviceVerification": "Revoke this device verification status",
+      "deviceVerificationRevoked": "This device verification status has been revoked"
+    },
     "changePassword": {
       "title": "Change Password",
       "currentPassword": "Current Password",
@@ -330,7 +345,50 @@
       "passwordTooShort": "New password must be at least 8 characters",
       "success": "Password updated successfully",
       "failed": "Failed to update password"
+    },
+    "passkeys": {
+      "title": "Passkeys",
+      "subtitle": "Use your device's built-in security key, fingerprint, or face unlock to sign in.",
+      "add": "Add Passkey",
+      "addPrompt": "Enter a name for this passkey",
+      "addSuccess": "Passkey added successfully",
+      "addFailed": "Failed to add passkey",
+      "renamePrompt": "Enter a new passkey name",
+      "renameSuccess": "Passkey updated successfully",
+      "renameFailed": "Failed to update passkey",
+      "revoke": "Revoke Device",
+      "revokeConfirm": "Are you sure you want to revoke this device's passkey?",
+      "revokeSuccess": "Device revoked successfully",
+      "revokeFailed": "Failed to revoke device",
+      "empty": "You have not set up any passkeys yet.",
+      "loadFailed": "Failed to load passkeys",
+      "deviceType": "Device type",
+      "backedUp": "Backed up",
+      "yes": "Yes",
+      "no": "No",
+      "lastUsed": "Last used",
+      "neverUsed": "Never used",
+      "deviceTypes": {
+        "singleDevice": "Single-device",
+        "multiDevice": "Multi-device",
+        "hybrid": "Hybrid"
+      }
     }
+  },
+  "passkeyVerification": {
+    "loginTitle": "Verify with Passkey",
+    "authorizeTitle": "Verify passkey before authorization",
+    "loginSubtitle": "Your account has passkeys configured. Please complete device verification first.",
+    "authorizeSubtitle": "This app authorization requires another identity check.",
+    "item1": "Use one of your registered passkeys to confirm your identity.",
+    "item2": "After verification, continue the current sign-in or authorization flow.",
+    "item3": "If this is your device, complete the verification as normal.",
+    "account": "Account",
+    "back": "Go back",
+    "verify": "Verify with Passkey",
+    "verifying": "Verifying...",
+    "failed": "Passkey verification failed",
+    "emailRequired": "Enter your account email before verifying"
   },
   "modal": {
     "deleteApp": {
@@ -372,6 +430,7 @@
     "bind": "Bind",
     "binding": "Binding...",
     "unbind": "Unbind",
+    "unbindConfirm": "Are you sure you want to unbind the XMOJ account? This will remove the current link.",
     "rebindHint": "An XMOJ account is already bound. Unbind first to bind another account.",
     "bindSuccess": "Binding succeeded. Verified profile: {{username}}"
   }

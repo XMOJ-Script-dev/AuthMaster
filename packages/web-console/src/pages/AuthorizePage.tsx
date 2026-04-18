@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
 import { api } from '../api/client';
+import { isPasskeyTrusted } from '../utils/passkey';
 
 export function AuthorizePage() {
   const { t } = useTranslation();
@@ -28,8 +29,20 @@ export function AuthorizePage() {
       return;
     }
 
-    loadApplication();
-  }, [isAuthenticated, clientId]);
+    const run = async () => {
+      if (user?.id && !isPasskeyTrusted(user.id)) {
+        const passkeys = await api.getPasskeys();
+        if (passkeys.passkeys.length > 0) {
+          navigate(`/passkey-verification?mode=authorize&next=${encodeURIComponent(window.location.href)}`);
+          return;
+        }
+      }
+
+      loadApplication();
+    };
+
+    run();
+  }, [isAuthenticated, clientId, navigate, user?.id]);
 
   const loadApplication = async () => {
     if (!clientId) {

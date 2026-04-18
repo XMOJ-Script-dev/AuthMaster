@@ -6,6 +6,7 @@ interface AuthContextType {
   user: UserPublic | null;
   token: string | null;
   login: (email: string, password: string) => Promise<void>;
+  setSession: (user: UserPublic, token: string) => void;
   register: (
     email: string,
     password: string,
@@ -80,6 +81,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setToken(result.token);
   };
 
+  const setSession = (nextUser: UserPublic, nextToken: string) => {
+    setUser(nextUser);
+    setToken(nextToken);
+    api.setToken(nextToken);
+  };
+
   const register = async (email: string, password: string, accountType: 'user' | 'merchant') => {
     const created = await api.register(email, password, accountType);
     if (created.status === 'pending') {
@@ -102,6 +109,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     user,
     token,
     login,
+    setSession,
     register,
     logout,
     isAuthenticated: !!token,

@@ -2,6 +2,7 @@ import { Env } from '../types';
 import { Router, jsonResponse, corsHeaders } from '../router';
 import { AuthService } from '../services/auth';
 import { AppService } from '../services/app';
+import { PasskeyService } from '../services/passkey';
 import { OAuthService } from '../services/oauth';
 import { XmojService } from '../services/xmoj';
 import { requireAuth, isAuthContext, requireRole, requireAdmin } from '../middleware/auth';
@@ -11,6 +12,10 @@ import {
   loginSchema,
   resetPasswordSchema,
   changePasswordSchema,
+  passkeyRegisterCompleteSchema,
+  passkeyAuthenticationCompleteSchema,
+  passkeyUpdateSchema,
+  passkeyLoginStartSchema,
   createApplicationSchema,
   updateApplicationSchema,
   authorizeSchema,
@@ -119,6 +124,36 @@ export function setupRoutes(router: Router): void {
       await authService.changePassword(authResult.userId, input.current_password, input.new_password);
 
       return jsonResponse({ message: 'Password changed successfully' }, HTTP_STATUS.OK);
+    } catch (error: any) {
+      return jsonResponse({ error: error.message }, HTTP_STATUS.BAD_REQUEST);
+    }
+  });
+
+  router.add('POST', '/api/v1/auth/passkey/login-options', async (request, env) => {
+    try {
+      const body = await request.json();
+      const input = passkeyLoginStartSchema.parse(body);
+      const passkeyService = new PasskeyService(env);
+      const result = await passkeyService.beginAuthentication(input.email);
+      return jsonResponse(result, HTTP_STATUS.OK);
+    } catch (error: any) {
+      return jsonResponse({ error: error.message }, HTTP_STATUS.BAD_REQUEST);
+    }
+  });
+
+  router.add('POST', '/api/v1/auth/passkey/login', async (request, env) => {
+    try {
+      const body = await request.json();
+      const input = passkeyAuthenticationCompleteSchema.parse(body);
+      const passkeyService = new PasskeyService(env);
+      const authService = new AuthService(env);
+      const verification = await passkeyService.completeAuthentication({
+        challenge_id: input.challenge_id,
+        credential: input.credential as any,
+      });
+      const result = await authService.loginWithUserId(verification.user_id);
+
+      return jsonResponse(result, HTTP_STATUS.OK);
     } catch (error: any) {
       return jsonResponse({ error: error.message }, HTTP_STATUS.BAD_REQUEST);
     }
@@ -272,6 +307,89 @@ export function setupRoutes(router: Router): void {
       const requests = await appService.getChangeRequestsByApp(params.appId, authResult.userId, authResult.role);
 
       return jsonResponse({ requests }, HTTP_STATUS.OK);
+    } catch (error: any) {
+      return jsonResponse({ error: error.message }, HTTP_STATUS.BAD_REQUEST);
+    }
+  });
+
+  router.add('GET', '/api/v1/me/passkeys', async (request, env) => {
+    const authResult = await requireAuth(request, env);
+    if (!isAuthContext(authResult)) {
+      return authResult;
+    }
+
+    try {
+      const passkeyService = new PasskeyService(env);
+      const passkeys = await passkeyService.listPasskeys(authResult.userId);
+      return jsonResponse({ passkeys }, HTTP_STATUS.OK);
+    } catch (error: any) {
+      return jsonResponse({ error: error.message }, HTTP_STATUS.BAD_REQUEST);
+    }
+  });
+
+  router.add('POST', '/api/v1/me/passkeys/registration-options', async (request, env) => {
+    const authResult = await requireAuth(request, env);
+    if (!isAuthContext(authResult)) {
+      return authResult;
+    }
+
+    try {
+      const passkeyService = new PasskeyService(env);
+      const result = await passkeyService.beginRegistration(authResult.userId);
+      return jsonResponse(result, HTTP_STATUS.OK);
+    } catch (error: any) {
+      return jsonResponse({ error: error.message }, HTTP_STATUS.BAD_REQUEST);
+    }
+  });
+
+  router.add('POST', '/api/v1/me/passkeys/register', async (request, env) => {
+    const authResult = await requireAuth(request, env);
+    if (!isAuthContext(authResult)) {
+      return authResult;
+    }
+
+    try {
+      const body = await request.json();
+      const input = passkeyRegisterCompleteSchema.parse(body);
+      const passkeyService = new PasskeyService(env);
+      const passkey = await passkeyService.completeRegistration(authResult.userId, {
+        challenge_id: input.challenge_id,
+        credential: input.credential as any,
+        name: input.name,
+      });
+      return jsonResponse({ passkey }, HTTP_STATUS.CREATED);
+    } catch (error: any) {
+      return jsonResponse({ error: error.message }, HTTP_STATUS.BAD_REQUEST);
+    }
+  });
+
+  router.add('PATCH', '/api/v1/me/passkeys/:passkeyId', async (request, env, params) => {
+    const authResult = await requireAuth(request, env);
+    if (!isAuthContext(authResult)) {
+      return authResult;
+    }
+
+    try {
+      const body = await request.json();
+      const input = passkeyUpdateSchema.parse(body);
+      const passkeyService = new PasskeyService(env);
+      const passkey = await passkeyService.updateName(authResult.userId, params.passkeyId, input.name);
+      return jsonResponse({ passkey }, HTTP_STATUS.OK);
+    } catch (error: any) {
+      return jsonResponse({ error: error.message }, HTTP_STATUS.BAD_REQUEST);
+    }
+  });
+
+  router.add('DELETE', '/api/v1/me/passkeys/:passkeyId', async (request, env, params) => {
+    const authResult = await requireAuth(request, env);
+    if (!isAuthContext(authResult)) {
+      return authResult;
+    }
+
+    try {
+      const passkeyService = new PasskeyService(env);
+      await passkeyService.deletePasskey(authResult.userId, params.passkeyId);
+      return jsonResponse({ message: 'Passkey deleted successfully' }, HTTP_STATUS.OK);
     } catch (error: any) {
       return jsonResponse({ error: error.message }, HTTP_STATUS.BAD_REQUEST);
     }

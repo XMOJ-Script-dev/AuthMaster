@@ -46,6 +46,62 @@ export interface XmojBindingPublic {
   created_at: string;
 }
 
+export interface PasskeyCredential {
+  id: string;
+  user_id: string;
+  credential_id: string;
+  public_key: string;
+  counter: number;
+  name: string;
+  device_type: string;
+  backed_up: boolean;
+  transports?: string;
+  last_used_at?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PasskeyCredentialPublic {
+  id: string;
+  name: string;
+  device_type: string;
+  backed_up: boolean;
+  transports: string[];
+  last_used_at?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PasskeyChallenge {
+  id: string;
+  user_id: string;
+  purpose: 'registration' | 'authentication';
+  challenge: string;
+  expires_at: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PasskeyListResponse {
+  passkeys: PasskeyCredentialPublic[];
+}
+
+export interface PasskeyOptionsResponse {
+  challenge_id: string;
+  options: any;
+}
+
+export interface PasskeyRegistrationCompleteRequest {
+  challenge_id: string;
+  credential: Record<string, unknown>;
+  name?: string;
+}
+
+export interface PasskeyAuthenticationCompleteRequest {
+  challenge_id: string;
+  credential: Record<string, unknown>;
+}
+
 export interface AdminUserListItem {
   id: string;
   email: string;

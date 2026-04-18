@@ -137,6 +137,22 @@ export interface AdminSystemSettings {
   updated_at: string;
 }
 
+export interface PasskeyItem {
+  id: string;
+  name: string;
+  device_type: string;
+  backed_up: boolean;
+  transports: string[];
+  last_used_at?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PasskeyOptionsResponse {
+  challenge_id: string;
+  options: Record<string, unknown>;
+}
+
 class ApiClient {
   private token: string | null = null;
 
@@ -214,6 +230,59 @@ class ApiClient {
         current_password: currentPassword,
         new_password: newPassword,
       }),
+    });
+  }
+
+  async getPasskeys() {
+    return this.request<{ passkeys: PasskeyItem[] }>('/api/v1/me/passkeys', {
+      method: 'GET',
+    });
+  }
+
+  async beginPasskeyRegistration() {
+    return this.request<PasskeyOptionsResponse>('/api/v1/me/passkeys/registration-options', {
+      method: 'POST',
+    });
+  }
+
+  async completePasskeyRegistration(data: {
+    challenge_id: string;
+    credential: Record<string, unknown>;
+    name?: string;
+  }) {
+    return this.request<{ passkey: PasskeyItem }>('/api/v1/me/passkeys/register', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updatePasskey(passkeyId: string, name: string) {
+    return this.request<{ passkey: PasskeyItem }>(`/api/v1/me/passkeys/${passkeyId}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ name }),
+    });
+  }
+
+  async deletePasskey(passkeyId: string) {
+    return this.request<{ message: string }>(`/api/v1/me/passkeys/${passkeyId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async beginPasskeyLogin(email: string) {
+    return this.request<PasskeyOptionsResponse>('/api/v1/auth/passkey/login-options', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    });
+  }
+
+  async completePasskeyLogin(data: {
+    challenge_id: string;
+    credential: Record<string, unknown>;
+  }) {
+    return this.request<{ user: { id: string; email: string; role: AdminAccountRole; status: AdminAccountStatus; created_at: string }; token: string; expires_in: number }>('/api/v1/auth/passkey/login', {
+      method: 'POST',
+      body: JSON.stringify(data),
     });
   }
 

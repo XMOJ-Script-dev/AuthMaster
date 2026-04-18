@@ -7,6 +7,9 @@ import {
   APIUsage,
   XmojBinding,
   UserAuthorizationApp,
+  PasskeyCredential,
+  PasskeyCredentialPublic,
+  PasskeyChallenge,
   AccountRole,
   AccountStatus,
   AdminUserListItem,
@@ -159,6 +162,258 @@ export class Database {
       .run();
   }
 
+  async createPasskeyChallenge(input: {
+    user_id: string;
+    purpose: PasskeyChallenge['purpose'];
+    challenge: string;
+    expires_at: string;
+  }): Promise<PasskeyChallenge> {
+    const id = crypto.randomUUID();
+    const now = new Date().toISOString();
+
+    await this.db
+      .prepare(
+        `INSERT INTO passkey_challenges (
+          id,
+          user_id,
+          purpose,
+          challenge,
+          expires_at,
+          created_at,
+          updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?)`
+      )
+      .bind(id, input.user_id, input.purpose, input.challenge, input.expires_at, now, now)
+      .run();
+
+    return {
+      id,
+      user_id: input.user_id,
+      purpose: input.purpose,
+      challenge: input.challenge,
+      expires_at: input.expires_at,
+      created_at: now,
+      updated_at: now,
+    };
+  }
+
+  async getPasskeyChallenge(userId: string, purpose: PasskeyChallenge['purpose']): Promise<PasskeyChallenge | null> {
+    const result = await this.db
+      .prepare('SELECT * FROM passkey_challenges WHERE user_id = ? AND purpose = ? ORDER BY created_at DESC LIMIT 1')
+      .bind(userId, purpose)
+      .first<any>();
+
+    if (!result) {
+      return null;
+    }
+
+    return {
+      id: result.id,
+      user_id: result.user_id,
+      purpose: result.purpose,
+      challenge: result.challenge,
+      expires_at: result.expires_at,
+      created_at: result.created_at,
+      updated_at: result.updated_at,
+    };
+  }
+
+  async getPasskeyChallengeById(id: string): Promise<PasskeyChallenge | null> {
+    const result = await this.db
+      .prepare('SELECT * FROM passkey_challenges WHERE id = ?')
+      .bind(id)
+      .first<any>();
+
+    if (!result) {
+      return null;
+    }
+
+    return {
+      id: result.id,
+      user_id: result.user_id,
+      purpose: result.purpose,
+      challenge: result.challenge,
+      expires_at: result.expires_at,
+      created_at: result.created_at,
+      updated_at: result.updated_at,
+    };
+  }
+
+  async deletePasskeyChallenge(userId: string, purpose: PasskeyChallenge['purpose']): Promise<void> {
+    await this.db
+      .prepare('DELETE FROM passkey_challenges WHERE user_id = ? AND purpose = ?')
+      .bind(userId, purpose)
+      .run();
+  }
+
+  async listPasskeysByUserId(userId: string): Promise<PasskeyCredentialPublic[]> {
+    const result = await this.db
+      .prepare('SELECT * FROM passkey_credentials WHERE user_id = ? ORDER BY created_at DESC')
+      .bind(userId)
+      .all<any>();
+
+    return result.results.map(record => this.toPasskeyPublic(record));
+  }
+
+  async getPasskeyCredentialsForUser(userId: string): Promise<PasskeyCredential[]> {
+    const result = await this.db
+      .prepare('SELECT * FROM passkey_credentials WHERE user_id = ? ORDER BY created_at DESC')
+      .bind(userId)
+      .all<any>();
+
+    return result.results.map(record => ({
+      id: record.id,
+      user_id: record.user_id,
+      credential_id: record.credential_id,
+      public_key: record.public_key,
+      counter: Number(record.counter || 0),
+      name: record.name,
+      device_type: record.device_type,
+      backed_up: !!record.backed_up,
+      transports: record.transports || undefined,
+      last_used_at: record.last_used_at || undefined,
+      created_at: record.created_at,
+      updated_at: record.updated_at,
+    }));
+  }
+
+  async getPasskeyByCredentialId(credentialId: string): Promise<PasskeyCredential | null> {
+    const result = await this.db
+      .prepare('SELECT * FROM passkey_credentials WHERE credential_id = ?')
+      .bind(credentialId)
+      .first<any>();
+
+    if (!result) {
+      return null;
+    }
+
+    return {
+      id: result.id,
+      user_id: result.user_id,
+      credential_id: result.credential_id,
+      public_key: result.public_key,
+      counter: Number(result.counter || 0),
+      name: result.name,
+      device_type: result.device_type,
+      backed_up: !!result.backed_up,
+      transports: result.transports || undefined,
+      last_used_at: result.last_used_at || undefined,
+      created_at: result.created_at,
+      updated_at: result.updated_at,
+    };
+  }
+
+  async getPasskeyById(id: string): Promise<PasskeyCredential | null> {
+    const result = await this.db
+      .prepare('SELECT * FROM passkey_credentials WHERE id = ?')
+      .bind(id)
+      .first<any>();
+
+    if (!result) {
+      return null;
+    }
+
+    return {
+      id: result.id,
+      user_id: result.user_id,
+      credential_id: result.credential_id,
+      public_key: result.public_key,
+      counter: Number(result.counter || 0),
+      name: result.name,
+      device_type: result.device_type,
+      backed_up: !!result.backed_up,
+      transports: result.transports || undefined,
+      last_used_at: result.last_used_at || undefined,
+      created_at: result.created_at,
+      updated_at: result.updated_at,
+    };
+  }
+
+  async createPasskeyCredential(input: {
+    user_id: string;
+    credential_id: string;
+    public_key: string;
+    counter: number;
+    name: string;
+    device_type: string;
+    backed_up: boolean;
+    transports?: string[];
+  }): Promise<PasskeyCredential> {
+    const id = crypto.randomUUID();
+    const now = new Date().toISOString();
+    const transports = input.transports && input.transports.length > 0 ? JSON.stringify(input.transports) : null;
+
+    await this.db
+      .prepare(
+        `INSERT INTO passkey_credentials (
+          id,
+          user_id,
+          credential_id,
+          public_key,
+          counter,
+          name,
+          device_type,
+          backed_up,
+          transports,
+          created_at,
+          updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      )
+      .bind(
+        id,
+        input.user_id,
+        input.credential_id,
+        input.public_key,
+        input.counter,
+        input.name,
+        input.device_type,
+        input.backed_up ? 1 : 0,
+        transports,
+        now,
+        now
+      )
+      .run();
+
+    return {
+      id,
+      user_id: input.user_id,
+      credential_id: input.credential_id,
+      public_key: input.public_key,
+      counter: input.counter,
+      name: input.name,
+      device_type: input.device_type,
+      backed_up: input.backed_up,
+      transports: transports || undefined,
+      created_at: now,
+      updated_at: now,
+    };
+  }
+
+  async updatePasskeyName(id: string, name: string): Promise<PasskeyCredential | null> {
+    const now = new Date().toISOString();
+    await this.db
+      .prepare('UPDATE passkey_credentials SET name = ?, updated_at = ? WHERE id = ?')
+      .bind(name, now, id)
+      .run();
+
+    return this.getPasskeyById(id);
+  }
+
+  async updatePasskeyCounter(credentialId: string, counter: number): Promise<void> {
+    const now = new Date().toISOString();
+    await this.db
+      .prepare('UPDATE passkey_credentials SET counter = ?, last_used_at = ?, updated_at = ? WHERE credential_id = ?')
+      .bind(counter, now, now, credentialId)
+      .run();
+  }
+
+  async deletePasskeyCredential(id: string): Promise<void> {
+    await this.db
+      .prepare('DELETE FROM passkey_credentials WHERE id = ?')
+      .bind(id)
+      .run();
+  }
+
   async listUsers(options: {
     limit: number;
     offset: number;
@@ -220,6 +475,20 @@ export class Database {
         updated_at: user.updated_at,
       })),
       total: Number(countResult?.total || 0),
+    };
+  }
+
+  private toPasskeyPublic(record: any): PasskeyCredentialPublic {
+    const transports = record.transports ? JSON.parse(record.transports) : [];
+    return {
+      id: record.id,
+      name: record.name,
+      device_type: record.device_type,
+      backed_up: !!record.backed_up,
+      transports,
+      last_used_at: record.last_used_at || undefined,
+      created_at: record.created_at,
+      updated_at: record.updated_at,
     };
   }
 

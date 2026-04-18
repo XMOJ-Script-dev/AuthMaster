@@ -60,11 +60,11 @@ export function Navbar() {
                   {menuOpen && (
                     <div className="absolute right-0 mt-2 w-44 bg-white text-gray-800 rounded-md shadow-lg overflow-hidden z-20">
                       <Link
-                        to="/change-password"
+                        to="/account-security"
                         onClick={() => setMenuOpen(false)}
                         className="block px-4 py-2 text-sm hover:bg-gray-100"
                       >
-                        {t('nav.changePassword')}
+                        {t('nav.accountSecurity')}
                       </Link>
                       <button
                         onClick={() => {

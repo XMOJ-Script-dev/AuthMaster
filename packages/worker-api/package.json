@@ -12,7 +12,8 @@
     "db:create": "wrangler d1 create authmaster-db"
   },
   "dependencies": {
-    "@authmaster/shared": "file:../shared"
+    "@authmaster/shared": "file:../shared",
+    "@simplewebauthn/server": "^13.0.0"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20231218.0",

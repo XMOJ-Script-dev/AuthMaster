@@ -78,16 +78,25 @@ export class AuthService {
     );
 
     return {
-      user: {
-        id: user.id,
-        email: user.email,
-        role: user.role,
-        status: user.status,
-        created_at: user.created_at,
-      },
-      token,
-      expires_in: expiresIn,
+      ...(await this.buildLoginResponse(user.id)),
     };
+  }
+
+  async loginWithUserId(userId: string): Promise<LoginResponse> {
+    const user = await this.db.getUserById(userId);
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    if (user.status === 'pending') {
+      throw new Error('Merchant account is pending review');
+    }
+
+    if (user.status === 'disabled') {
+      throw new Error('Account is disabled');
+    }
+
+    return this.buildLoginResponse(user.id);
   }
 
   async verifyToken(token: string): Promise<AuthContext | null> {
@@ -130,5 +139,38 @@ export class AuthService {
 
     const newHash = await hashPassword(newPassword);
     await this.db.updateUserPassword(userId, newHash);
+  }
+
+  private async buildLoginResponse(userId: string): Promise<LoginResponse> {
+    const user = await this.db.getUserById(userId);
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    const expiresIn = TOKEN_EXPIRATION.ACCESS_TOKEN;
+    const token = await signJWT(
+      {
+        sub: user.id,
+        email: user.email,
+        role: user.role,
+        status: user.status,
+        iss: this.env.ISSUER,
+        exp: Math.floor(Date.now() / 1000) + expiresIn,
+        iat: Math.floor(Date.now() / 1000),
+      },
+      this.env.JWT_SECRET
+    );
+
+    return {
+      user: {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+        status: user.status,
+        created_at: user.created_at,
+      },
+      token,
+      expires_in: expiresIn,
+    };
   }
 }

@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../api/client';
 import { useAuth } from '../contexts/AuthContext';
+import { ConfirmModal } from '../components/ConfirmModal';
+import { ensurePasskeyForSensitiveAction } from '../utils/passkeyAction';
 
 function generateBookmarklet(dest: string, loginRequiredText: string): string {
   const code =
@@ -40,7 +42,7 @@ function parseSessionHash(hash: string): { username: string; phpsessid: string }
 
 export function XmojBindingPage() {
   const { t } = useTranslation();
-  const { user } = useAuth();
+  const { user, setSession } = useAuth();
   const isDesktop =
     typeof window !== 'undefined' &&
     window.matchMedia('(pointer:fine)').matches &&
@@ -54,6 +56,7 @@ export function XmojBindingPage() {
   const [binding, setBinding] = useState<any | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [pendingHashSession, setPendingHashSession] = useState<{ username: string; phpsessid: string } | null>(null);
+  const [showUnbindConfirm, setShowUnbindConfirm] = useState(false);
   const callbackUrl = `${window.location.origin}/xmoj-binding`;
   const bookmarklet = generateBookmarklet(callbackUrl, t('xmoj.bookmarkLoginRequired'));
 
@@ -142,9 +145,14 @@ export function XmojBindingPage() {
   };
 
   const unbind = async () => {
+    setShowUnbindConfirm(false);
     setSubmitting(true);
     setError('');
     try {
+      if (user) {
+        await ensurePasskeyForSensitiveAction({ user, setSession });
+      }
+
       await api.unbindXmoj();
       setBinding(null);
     } catch (err: any) {
@@ -196,7 +204,7 @@ export function XmojBindingPage() {
             <p><span className="text-gray-500">{t('xmoj.userId')}:</span> {binding.xmoj_user_id}</p>
             <p><span className="text-gray-500">{t('xmoj.method')}:</span> {binding.bind_method}</p>
             <button
-              onClick={unbind}
+              onClick={() => setShowUnbindConfirm(true)}
               disabled={submitting}
               className="mt-3 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50"
             >
@@ -304,6 +312,15 @@ export function XmojBindingPage() {
       {binding && (
         <p className="text-sm text-gray-600 mt-3">{t('xmoj.rebindHint')}</p>
       )}
+
+      <ConfirmModal
+        isOpen={showUnbindConfirm}
+        title={t('xmoj.unbind')}
+        message={t('xmoj.unbindConfirm')}
+        onConfirm={unbind}
+        onCancel={() => setShowUnbindConfirm(false)}
+        variant="danger"
+      />
     </div>
   );
 }

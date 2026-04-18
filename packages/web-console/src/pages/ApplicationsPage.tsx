@@ -4,12 +4,13 @@ import { useTranslation } from 'react-i18next';
 import { api } from '../api/client';
 import { ConfirmModal } from '../components/ConfirmModal';
 import { useAuth } from '../contexts/AuthContext';
+import { ensurePasskeyForSensitiveAction } from '../utils/passkeyAction';
 
 const SCOPE_OPTIONS = ['openid', 'profile', 'email', 'xmoj_profile', 'read', 'write'];
 
 export function ApplicationsPage() {
   const { t } = useTranslation();
-  const { user } = useAuth();
+  const { user, setSession } = useAuth();
   const isAdmin = user?.role === 'admin';
   const canManageApps = user?.role === 'merchant' || user?.role === 'admin';
   const [applications, setApplications] = useState<any[]>([]);
@@ -64,6 +65,10 @@ export function ApplicationsPage() {
     }
 
     try {
+      if (user?.role === 'merchant' && user) {
+        await ensurePasskeyForSensitiveAction({ user, setSession });
+      }
+
       const scopedValues = user?.role === 'admin' && formData.custom_scopes.trim().length > 0
         ? formData.custom_scopes.split(',').map(s => s.trim()).filter(Boolean)
         : formData.scopes;
@@ -105,6 +110,10 @@ export function ApplicationsPage() {
     if (!deleteConfirm) return;
 
     try {
+      if (user) {
+        await ensurePasskeyForSensitiveAction({ user, setSession });
+      }
+
       if (isAdmin) {
         await api.deleteAdminApplication(deleteConfirm);
       } else {

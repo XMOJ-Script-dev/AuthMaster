@@ -4,12 +4,13 @@ import { useTranslation } from 'react-i18next';
 import { api } from '../api/client';
 import { ConfirmModal } from '../components/ConfirmModal';
 import { useAuth } from '../contexts/AuthContext';
+import { ensurePasskeyForSensitiveAction } from '../utils/passkeyAction';
 
 const SCOPE_OPTIONS = ['openid', 'profile', 'email', 'xmoj_profile', 'read', 'write'];
 
 export function ApplicationDetailPage() {
   const { t } = useTranslation();
-  const { user } = useAuth();
+  const { user, setSession } = useAuth();
   const isAdmin = user?.role === 'admin';
   const { appId } = useParams<{ appId: string }>();
   const navigate = useNavigate();
@@ -83,6 +84,10 @@ export function ApplicationDetailPage() {
     setShowDeleteConfirm(false);
     setDeleting(true);
     try {
+      if (user) {
+        await ensurePasskeyForSensitiveAction({ user, setSession });
+      }
+
       await api.deleteApplication(appId!);
       navigate('/apps');
     } catch (err: any) {
@@ -146,6 +151,10 @@ export function ApplicationDetailPage() {
     }
 
     try {
+      if (user) {
+        await ensurePasskeyForSensitiveAction({ user, setSession });
+      }
+
       await api.submitValidationRequest(appId!, validationContent.trim());
       setValidationContent('');
       await loadApplication();
