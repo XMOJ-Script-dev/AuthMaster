@@ -149,9 +149,9 @@ export function DocsPage() {
     observerRef.current = new IntersectionObserver(
       entries => {
         const visible = entries.filter(e => e.isIntersecting).sort((a, b) => {
-          const ai = ids.indexOf(a.target.id as typeof ids[number]);
-          const bi = ids.indexOf(b.target.id as typeof ids[number]);
-          return ai - bi;
+          const aIndex = ids.indexOf(a.target.id as typeof ids[number]);
+          const bIndex = ids.indexOf(b.target.id as typeof ids[number]);
+          return aIndex - bIndex;
         });
         if (visible.length > 0) setActiveId(visible[0].target.id as typeof ids[number]);
       },
@@ -163,9 +163,7 @@ export function DocsPage() {
 
   const frontendBase = window.location.origin.replace(/\/$/, '');
   const backendBase = (
-    (window as any).__VITE_API_URL__ ||
-    (typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_API_URL) ||
-    window.location.origin
+    (import.meta as any).env?.VITE_API_URL || window.location.origin
   ).replace(/\/$/, '');
 
   return (
@@ -702,7 +700,7 @@ app.listen(3000);`} />
                     ['access_denied',    '—',   'The user clicked "Deny" on the consent screen.'],
                     ['unauthorized_client', '403', 'This grant type is not permitted for your application.'],
                     ['server_error',     '500', 'Internal server error. Retry with exponential backoff.'],
-                    ['Only user accounts can authorize applications', '403', 'The currently logged-in account is a merchant/admin. Ask the end-user to log in with a regular user account.'],
+                    ['account_type_mismatch', '403', 'The currently logged-in account is a merchant/admin. Ask the end-user to log in with a regular user account.'],
                   ]}
                 />
 
