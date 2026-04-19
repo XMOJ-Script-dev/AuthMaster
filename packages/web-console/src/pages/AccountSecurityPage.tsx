@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { startRegistration } from '@simplewebauthn/browser';
-import { api, PasskeyItem } from '../api/client';
+import QRCode from 'qrcode';
+import { api, MFAStatusResponse, PasskeyItem, TOTPSetupResponse } from '../api/client';
 import { useAuth } from '../contexts/AuthContext';
 import { clearPasskeyTrusted, isPasskeyTrusted } from '../utils/passkey';
 
@@ -16,11 +17,16 @@ export function AccountSecurityPage() {
   const [loadingPassword, setLoadingPassword] = useState(false);
   const [loadingPasskeyAction, setLoadingPasskeyAction] = useState(false);
   const [trustedOnThisDevice, setTrustedOnThisDevice] = useState(false);
+  const [mfaStatus, setMfaStatus] = useState<MFAStatusResponse | null>(null);
+  const [totpSetup, setTotpSetup] = useState<TOTPSetupResponse | null>(null);
+  const [totpSetupCode, setTotpSetupCode] = useState('');
+  const [totpQrDataUrl, setTotpQrDataUrl] = useState('');
+  const [visibleRecoveryCodes, setVisibleRecoveryCodes] = useState<string[]>([]);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
   useEffect(() => {
-    loadPasskeys();
+    void Promise.all([loadPasskeys(), loadMfaStatus()]);
   }, []);
 
   useEffect(() => {
@@ -41,6 +47,15 @@ export function AccountSecurityPage() {
       setError(err?.message || t('profile.passkeys.loadFailed'));
     } finally {
       setLoadingPasskeys(false);
+    }
+  };
+
+  const loadMfaStatus = async () => {
+    try {
+      const result = await api.getMFAStatus();
+      setMfaStatus(result);
+    } catch (err: any) {
+      setError(err?.message || t('profile.authenticator.loadFailed'));
     }
   };
 
@@ -94,7 +109,7 @@ export function AccountSecurityPage() {
       });
 
       setSuccess(t('profile.passkeys.addSuccess'));
-      await loadPasskeys();
+      await Promise.all([loadPasskeys(), loadMfaStatus()]);
     } catch (err: any) {
       setError(err?.message || t('profile.passkeys.addFailed'));
     } finally {
@@ -115,7 +130,7 @@ export function AccountSecurityPage() {
     try {
       await api.updatePasskey(passkey.id, nextName);
       setSuccess(t('profile.passkeys.renameSuccess'));
-      await loadPasskeys();
+      await Promise.all([loadPasskeys(), loadMfaStatus()]);
     } catch (err: any) {
       setError(err?.message || t('profile.passkeys.renameFailed'));
     } finally {
@@ -135,7 +150,7 @@ export function AccountSecurityPage() {
     try {
       await api.deletePasskey(passkey.id);
       setSuccess(t('profile.passkeys.revokeSuccess'));
-      await loadPasskeys();
+      await Promise.all([loadPasskeys(), loadMfaStatus()]);
     } catch (err: any) {
       setError(err?.message || t('profile.passkeys.revokeFailed'));
     } finally {
@@ -151,6 +166,121 @@ export function AccountSecurityPage() {
     clearPasskeyTrusted(user.id);
     setTrustedOnThisDevice(false);
     setSuccess(t('profile.security.deviceVerificationRevoked'));
+  };
+
+  const handleBeginTotpSetup = async () => {
+    setError('');
+    setSuccess('');
+    setLoadingPasskeyAction(true);
+
+    try {
+      const setup = await api.beginTOTPSetup();
+      setTotpSetup(setup);
+      setVisibleRecoveryCodes(setup.recovery_codes);
+      setTotpSetupCode('');
+      setTotpQrDataUrl(await QRCode.toDataURL(setup.otpauth_url, { width: 220, margin: 1 }));
+    } catch (err: any) {
+      setError(err?.message || t('profile.authenticator.setupFailed'));
+    } finally {
+      setLoadingPasskeyAction(false);
+    }
+  };
+
+  const handleEnableTotp = async () => {
+    if (!totpSetup) {
+      return;
+    }
+
+    setError('');
+    setSuccess('');
+    setLoadingPasskeyAction(true);
+
+    try {
+      const result = await api.enableTOTP({
+        setup_id: totpSetup.setup_id,
+        code: totpSetupCode,
+      });
+      setMfaStatus(result);
+      setTotpSetup(null);
+      setTotpSetupCode('');
+      setSuccess(t('profile.authenticator.enableSuccess'));
+    } catch (err: any) {
+      setError(err?.message || t('profile.authenticator.enableFailed'));
+    } finally {
+      setLoadingPasskeyAction(false);
+    }
+  };
+
+  const handleDisableTotp = async () => {
+    if (!window.confirm(t('profile.authenticator.disableConfirm'))) {
+      return;
+    }
+
+    setError('');
+    setSuccess('');
+    setLoadingPasskeyAction(true);
+
+    try {
+      const result = await api.disableTOTP();
+      setMfaStatus(result);
+      setVisibleRecoveryCodes([]);
+      setSuccess(t('profile.authenticator.disableSuccess'));
+    } catch (err: any) {
+      setError(err?.message || t('profile.authenticator.disableFailed'));
+    } finally {
+      setLoadingPasskeyAction(false);
+    }
+  };
+
+  const handleRegenerateRecoveryCodes = async () => {
+    const code = window.prompt(t('profile.authenticator.regeneratePrompt'))?.trim();
+    if (!code) {
+      return;
+    }
+
+    setError('');
+    setSuccess('');
+    setLoadingPasskeyAction(true);
+
+    try {
+      const result = await api.regenerateRecoveryCodes(code.includes('-') ? { recovery_code: code } : { code });
+      setVisibleRecoveryCodes(result.recovery_codes);
+      await loadMfaStatus();
+      setSuccess(t('profile.authenticator.recoveryRegenerated'));
+    } catch (err: any) {
+      setError(err?.message || t('profile.authenticator.recoveryRegenerateFailed'));
+    } finally {
+      setLoadingPasskeyAction(false);
+    }
+  };
+
+  const recoveryCodesText = visibleRecoveryCodes.join('\n');
+
+  const copyRecoveryCodes = async () => {
+    await navigator.clipboard.writeText(recoveryCodesText);
+    setSuccess(t('profile.authenticator.recoveryCopied'));
+  };
+
+  const downloadRecoveryCodes = () => {
+    const blob = new Blob([recoveryCodesText], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = 'authmaster-recovery-codes.txt';
+    anchor.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const printRecoveryCodes = () => {
+    const printWindow = window.open('', '_blank', 'width=640,height=720');
+    if (!printWindow) {
+      return;
+    }
+
+    printWindow.document.write(`<pre style="font:16px monospace;padding:24px;">${recoveryCodesText}</pre>`);
+    printWindow.document.close();
+    printWindow.focus();
+    printWindow.print();
   };
 
   return (
@@ -284,6 +414,117 @@ export function AccountSecurityPage() {
               ))
             )}
           </div>
+        </section>
+
+        <section className="space-y-5 bg-white rounded-lg shadow p-6 lg:col-span-2">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h2 className="text-xl font-semibold text-gray-900 mb-1">{t('profile.authenticator.title')}</h2>
+              <p className="text-sm text-gray-500">{t('profile.authenticator.subtitle')}</p>
+            </div>
+            {mfaStatus?.totp_enabled ? (
+              <span className="rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-800">
+                {t('profile.authenticator.enabled')}
+              </span>
+            ) : (
+              <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-700">
+                {t('profile.authenticator.disabled')}
+              </span>
+            )}
+          </div>
+
+          {!mfaStatus?.totp_enabled && !totpSetup && (
+            <button
+              onClick={handleBeginTotpSetup}
+              disabled={loadingPasskeyAction}
+              className="rounded-md bg-gray-900 px-4 py-2 font-semibold text-white hover:bg-black disabled:opacity-50"
+            >
+              {t('profile.authenticator.setup')}
+            </button>
+          )}
+
+          {totpSetup && (
+            <div className="grid gap-6 lg:grid-cols-[220px_minmax(0,1fr)] rounded-xl border border-gray-200 bg-gray-50 p-5">
+              <div>
+                {totpQrDataUrl && <img src={totpQrDataUrl} alt={t('profile.authenticator.qrAlt')} className="rounded-lg border border-gray-200 bg-white p-3" />}
+              </div>
+              <div className="space-y-4">
+                <p className="text-sm text-gray-700">{t('profile.authenticator.scanHint')}</p>
+                <div>
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">{t('profile.authenticator.manualKey')}</p>
+                  <code className="block rounded-md bg-white px-3 py-2 text-sm text-gray-800 border border-gray-200 break-all">{totpSetup.secret}</code>
+                </div>
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-gray-700">{t('profile.authenticator.codeLabel')}</label>
+                  <input
+                    value={totpSetupCode}
+                    onChange={(e) => setTotpSetupCode(e.target.value.replace(/\D+/g, '').slice(0, 6))}
+                    placeholder={t('profile.authenticator.codePlaceholder')}
+                    className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+                  />
+                </div>
+                <div className="flex gap-3">
+                  <button
+                    onClick={handleEnableTotp}
+                    disabled={loadingPasskeyAction || totpSetupCode.length !== 6}
+                    className="rounded-md bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
+                  >
+                    {t('profile.authenticator.confirmSetup')}
+                  </button>
+                  <button
+                    onClick={() => setTotpSetup(null)}
+                    disabled={loadingPasskeyAction}
+                    className="rounded-md border border-gray-300 px-4 py-2 font-semibold text-gray-700 hover:bg-white disabled:opacity-50"
+                  >
+                    {t('common.cancel')}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {mfaStatus?.totp_enabled && (
+            <div className="flex flex-wrap items-center gap-3">
+              <p className="text-sm text-gray-600">
+                {t('profile.authenticator.recoveryRemaining')}: <span className="font-semibold text-gray-900">{mfaStatus.recovery_codes_remaining}</span>
+              </p>
+              <button
+                onClick={handleRegenerateRecoveryCodes}
+                disabled={loadingPasskeyAction}
+                className="rounded-md border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+              >
+                {t('profile.authenticator.regenerateRecoveryCodes')}
+              </button>
+              <button
+                onClick={handleDisableTotp}
+                disabled={loadingPasskeyAction}
+                className="rounded-md bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50"
+              >
+                {t('profile.authenticator.disable')}
+              </button>
+            </div>
+          )}
+
+          {visibleRecoveryCodes.length > 0 && (
+            <div className="rounded-xl border border-amber-200 bg-amber-50 p-5">
+              <div className="mb-4 flex items-start justify-between gap-4">
+                <div>
+                  <h3 className="text-lg font-semibold text-amber-900">{t('profile.authenticator.recoveryCodesTitle')}</h3>
+                  <p className="text-sm text-amber-800">{t('profile.authenticator.recoveryCodesHint')}</p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <button onClick={copyRecoveryCodes} className="rounded-md border border-amber-300 bg-white px-3 py-2 text-sm font-semibold text-amber-900 hover:bg-amber-100">{t('profile.authenticator.copyRecoveryCodes')}</button>
+                  <button onClick={downloadRecoveryCodes} className="rounded-md border border-amber-300 bg-white px-3 py-2 text-sm font-semibold text-amber-900 hover:bg-amber-100">{t('profile.authenticator.downloadRecoveryCodes')}</button>
+                  <button onClick={printRecoveryCodes} className="rounded-md border border-amber-300 bg-white px-3 py-2 text-sm font-semibold text-amber-900 hover:bg-amber-100">{t('profile.authenticator.printRecoveryCodes')}</button>
+                </div>
+              </div>
+              <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+                {visibleRecoveryCodes.map((code) => (
+                  <code key={code} className="rounded-md border border-amber-200 bg-white px-3 py-2 text-sm font-semibold text-gray-800">{code}</code>
+                ))}
+              </div>
+            </div>
+          )}
         </section>
 
         <section className="space-y-5 bg-white rounded-lg shadow p-6 lg:col-span-2">

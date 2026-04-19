@@ -40,6 +40,18 @@ export const passkeyLoginStartSchema = z.object({
   email: z.string().email(),
 });
 
+export const totpEnableSchema = z.object({
+  setup_id: z.string().min(1),
+  code: z.string().regex(/^\d{6}$/),
+});
+
+export const totpVerifySchema = z.object({
+  code: z.string().regex(/^\d{6}$/).optional(),
+  recovery_code: z.string().min(6).max(64).optional(),
+}).refine(input => !!input.code || !!input.recovery_code, {
+  message: 'Either code or recovery_code is required',
+});
+
 // Application validation schemas
 export const createApplicationSchema = z.object({
   name: z.string().min(1).max(255),
@@ -185,6 +197,8 @@ export type PasskeyRegisterCompleteInput = z.infer<typeof passkeyRegisterComplet
 export type PasskeyAuthenticationCompleteInput = z.infer<typeof passkeyAuthenticationCompleteSchema>;
 export type PasskeyUpdateInput = z.infer<typeof passkeyUpdateSchema>;
 export type PasskeyLoginStartInput = z.infer<typeof passkeyLoginStartSchema>;
+export type TOTPEnableInput = z.infer<typeof totpEnableSchema>;
+export type TOTPVerifyInput = z.infer<typeof totpVerifySchema>;
 export type CreateApplicationInput = z.infer<typeof createApplicationSchema>;
 export type UpdateApplicationInput = z.infer<typeof updateApplicationSchema>;
 export type SubmitValidationInput = z.infer<typeof submitValidationSchema>;

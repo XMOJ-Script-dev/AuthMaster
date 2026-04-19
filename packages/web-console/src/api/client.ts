@@ -153,6 +153,20 @@ export interface PasskeyOptionsResponse {
   options: Record<string, unknown>;
 }
 
+export interface MFAStatusResponse {
+  passkey_count: number;
+  totp_enabled: boolean;
+  recovery_codes_remaining: number;
+}
+
+export interface TOTPSetupResponse {
+  setup_id: string;
+  secret: string;
+  otpauth_url: string;
+  recovery_codes: string[];
+  expires_at: string;
+}
+
 class ApiClient {
   private token: string | null = null;
 
@@ -236,6 +250,45 @@ class ApiClient {
   async getPasskeys() {
     return this.request<{ passkeys: PasskeyItem[] }>('/api/v1/me/passkeys', {
       method: 'GET',
+    });
+  }
+
+  async getMFAStatus() {
+    return this.request<MFAStatusResponse>('/api/v1/me/mfa-status', {
+      method: 'GET',
+    });
+  }
+
+  async beginTOTPSetup() {
+    return this.request<TOTPSetupResponse>('/api/v1/me/totp/setup', {
+      method: 'POST',
+    });
+  }
+
+  async enableTOTP(data: { setup_id: string; code: string }) {
+    return this.request<MFAStatusResponse>('/api/v1/me/totp/enable', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async verifyTOTP(data: { code?: string; recovery_code?: string }) {
+    return this.request<{ verified: true }>('/api/v1/me/totp/verify', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async regenerateRecoveryCodes(data: { code?: string; recovery_code?: string }) {
+    return this.request<{ recovery_codes: string[] }>('/api/v1/me/totp/recovery-codes/regenerate', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async disableTOTP() {
+    return this.request<MFAStatusResponse>('/api/v1/me/totp', {
+      method: 'DELETE',
     });
   }
 

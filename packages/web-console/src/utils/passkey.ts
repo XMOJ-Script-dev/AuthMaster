@@ -1,5 +1,5 @@
 export function getPasskeyTrustKey(userId: string): string {
-  return `passkey_trusted:${userId}`;
+  return `mfa_trusted:${userId}`;
 }
 
 export function isPasskeyTrusted(userId: string): boolean {

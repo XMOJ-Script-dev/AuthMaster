@@ -3,6 +3,7 @@ import { Router, jsonResponse, corsHeaders } from '../router';
 import { AuthService } from '../services/auth';
 import { AppService } from '../services/app';
 import { PasskeyService } from '../services/passkey';
+import { TOTPService } from '../services/totp';
 import { OAuthService } from '../services/oauth';
 import { XmojService } from '../services/xmoj';
 import { requireAuth, isAuthContext, requireRole, requireAdmin } from '../middleware/auth';
@@ -16,6 +17,8 @@ import {
   passkeyAuthenticationCompleteSchema,
   passkeyUpdateSchema,
   passkeyLoginStartSchema,
+  totpEnableSchema,
+  totpVerifySchema,
   createApplicationSchema,
   updateApplicationSchema,
   authorizeSchema,
@@ -322,6 +325,102 @@ export function setupRoutes(router: Router): void {
       const passkeyService = new PasskeyService(env);
       const passkeys = await passkeyService.listPasskeys(authResult.userId);
       return jsonResponse({ passkeys }, HTTP_STATUS.OK);
+    } catch (error: any) {
+      return jsonResponse({ error: error.message }, HTTP_STATUS.BAD_REQUEST);
+    }
+  });
+
+  router.add('GET', '/api/v1/me/mfa-status', async (request, env) => {
+    const authResult = await requireAuth(request, env);
+    if (!isAuthContext(authResult)) {
+      return authResult;
+    }
+
+    try {
+      const totpService = new TOTPService(env);
+      const status = await totpService.getMFAStatus(authResult.userId);
+      return jsonResponse(status, HTTP_STATUS.OK);
+    } catch (error: any) {
+      return jsonResponse({ error: error.message }, HTTP_STATUS.BAD_REQUEST);
+    }
+  });
+
+  router.add('POST', '/api/v1/me/totp/setup', async (request, env) => {
+    const authResult = await requireAuth(request, env);
+    if (!isAuthContext(authResult)) {
+      return authResult;
+    }
+
+    try {
+      const totpService = new TOTPService(env);
+      const result = await totpService.beginSetup(authResult.userId, authResult.email);
+      return jsonResponse(result, HTTP_STATUS.OK);
+    } catch (error: any) {
+      return jsonResponse({ error: error.message }, HTTP_STATUS.BAD_REQUEST);
+    }
+  });
+
+  router.add('POST', '/api/v1/me/totp/enable', async (request, env) => {
+    const authResult = await requireAuth(request, env);
+    if (!isAuthContext(authResult)) {
+      return authResult;
+    }
+
+    try {
+      const body = await request.json();
+      const input = totpEnableSchema.parse(body);
+      const totpService = new TOTPService(env);
+      const status = await totpService.enable(authResult.userId, input);
+      return jsonResponse(status, HTTP_STATUS.OK);
+    } catch (error: any) {
+      return jsonResponse({ error: error.message }, HTTP_STATUS.BAD_REQUEST);
+    }
+  });
+
+  router.add('POST', '/api/v1/me/totp/verify', async (request, env) => {
+    const authResult = await requireAuth(request, env);
+    if (!isAuthContext(authResult)) {
+      return authResult;
+    }
+
+    try {
+      const body = await request.json();
+      const input = totpVerifySchema.parse(body);
+      const totpService = new TOTPService(env);
+      await totpService.verify(authResult.userId, input);
+      return jsonResponse({ verified: true }, HTTP_STATUS.OK);
+    } catch (error: any) {
+      return jsonResponse({ error: error.message }, HTTP_STATUS.BAD_REQUEST);
+    }
+  });
+
+  router.add('POST', '/api/v1/me/totp/recovery-codes/regenerate', async (request, env) => {
+    const authResult = await requireAuth(request, env);
+    if (!isAuthContext(authResult)) {
+      return authResult;
+    }
+
+    try {
+      const body = await request.json();
+      const input = totpVerifySchema.parse(body);
+      const totpService = new TOTPService(env);
+      const result = await totpService.regenerateRecoveryCodes(authResult.userId, input);
+      return jsonResponse(result, HTTP_STATUS.OK);
+    } catch (error: any) {
+      return jsonResponse({ error: error.message }, HTTP_STATUS.BAD_REQUEST);
+    }
+  });
+
+  router.add('DELETE', '/api/v1/me/totp', async (request, env) => {
+    const authResult = await requireAuth(request, env);
+    if (!isAuthContext(authResult)) {
+      return authResult;
+    }
+
+    try {
+      const totpService = new TOTPService(env);
+      const status = await totpService.disable(authResult.userId);
+      return jsonResponse(status, HTTP_STATUS.OK);
     } catch (error: any) {
       return jsonResponse({ error: error.message }, HTTP_STATUS.BAD_REQUEST);
     }

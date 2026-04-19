@@ -102,6 +102,52 @@ export interface PasskeyAuthenticationCompleteRequest {
   credential: Record<string, unknown>;
 }
 
+export interface TOTPSetupChallenge {
+  id: string;
+  user_id: string;
+  secret_encrypted: string;
+  recovery_code_hashes: string[];
+  expires_at: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TOTPCredential {
+  user_id: string;
+  secret_encrypted: string;
+  enabled_at: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface MFAStatusResponse {
+  passkey_count: number;
+  totp_enabled: boolean;
+  recovery_codes_remaining: number;
+}
+
+export interface TOTPSetupResponse {
+  setup_id: string;
+  secret: string;
+  otpauth_url: string;
+  recovery_codes: string[];
+  expires_at: string;
+}
+
+export interface TOTPEnableRequest {
+  setup_id: string;
+  code: string;
+}
+
+export interface TOTPVerifyRequest {
+  code?: string;
+  recovery_code?: string;
+}
+
+export interface RecoveryCodesResponse {
+  recovery_codes: string[];
+}
+
 export interface AdminUserListItem {
   id: string;
   email: string;

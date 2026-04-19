@@ -48,11 +48,11 @@ export function LoginPage() {
       setSession(result.user, result.token);
       setLastPasskeyEmail(result.user.email);
 
-      const sessionResult = await api.getPasskeys();
-      const hasPasskeys = (sessionResult.passkeys || []).length > 0;
+      const mfaStatus = await api.getMFAStatus();
+      const hasMfa = mfaStatus.passkey_count > 0 || mfaStatus.totp_enabled;
       const next = sessionStorage.getItem('oauth_redirect') || '/dashboard';
 
-      if (hasPasskeys && !isPasskeyTrusted(result.user.id)) {
+      if (hasMfa && !isPasskeyTrusted(result.user.id)) {
         navigate(`/passkey-verification?mode=login&email=${encodeURIComponent(email)}&next=${encodeURIComponent(next)}`);
         return;
       }

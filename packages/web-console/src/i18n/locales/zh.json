@@ -373,6 +373,38 @@
         "multiDevice": "多设备",
         "hybrid": "混合设备"
       }
+    },
+    "authenticator": {
+      "title": "Authenticator APP",
+      "subtitle": "使用基于时间的一次性验证码，作为通行密钥之外的另一种验证方式。",
+      "enabled": "已启用",
+      "disabled": "未启用",
+      "setup": "设置 Authenticator APP",
+      "setupFailed": "无法开始设置 Authenticator APP",
+      "loadFailed": "无法加载 Authenticator APP 状态",
+      "qrAlt": "Authenticator APP 二维码",
+      "scanHint": "使用 Google Authenticator、1Password、Bitwarden 或其他兼容应用扫描二维码，或手动输入下方密钥。",
+      "manualKey": "手动输入密钥",
+      "codeLabel": "输入应用中的 6 位验证码",
+      "codePlaceholder": "123456",
+      "confirmSetup": "确认并启用",
+      "enableSuccess": "Authenticator APP 已启用",
+      "enableFailed": "无法启用 Authenticator APP",
+      "disable": "停用 Authenticator APP",
+      "disableConfirm": "停用后将删除当前 Authenticator APP 和所有恢复码，是否继续？",
+      "disableSuccess": "Authenticator APP 已停用",
+      "disableFailed": "无法停用 Authenticator APP",
+      "recoveryRemaining": "剩余恢复码",
+      "regenerateRecoveryCodes": "重新生成恢复码",
+      "regeneratePrompt": "输入当前 6 位 Authenticator 验证码，或输入一条恢复码以重新生成恢复码",
+      "recoveryRegenerated": "恢复码已重新生成",
+      "recoveryRegenerateFailed": "无法重新生成恢复码",
+      "recoveryCodesTitle": "恢复码",
+      "recoveryCodesHint": "请立即保存这些恢复码。每条恢复码只能使用一次。",
+      "copyRecoveryCodes": "复制",
+      "downloadRecoveryCodes": "下载 TXT",
+      "printRecoveryCodes": "打印",
+      "recoveryCopied": "恢复码已复制"
     }
   },
   "passkeyVerification": {
@@ -386,9 +418,31 @@
     "account": "账号",
     "back": "返回上一页",
     "verify": "使用通行密钥验证",
+    "verifyTotp": "使用验证码验证",
     "verifying": "验证中...",
     "failed": "通行密钥验证失败",
-    "emailRequired": "请输入账号邮箱后再验证"
+    "emailRequired": "请输入账号邮箱后再验证",
+    "usePasskey": "使用通行密钥",
+    "useTotp": "使用 Authenticator APP",
+    "totpCodeLabel": "Authenticator 验证码",
+    "totpCodePlaceholder": "输入 6 位验证码",
+    "recoveryCodeLabel": "恢复码",
+    "recoveryCodePlaceholder": "输入恢复码",
+    "lostTotp": "丢失 Authenticator APP？改用恢复码",
+    "useTotpInstead": "返回使用 Authenticator 验证码",
+    "totpItem1": "打开 Authenticator APP 并输入当前 6 位验证码",
+    "totpItem2": "如果无法访问设备，你可以改用恢复码完成验证",
+    "totpItem3": "验证成功后，此设备会被标记为可信"
+  },
+  "sensitiveAction": {
+    "title": "确认敏感操作",
+    "chooseMethod": "请选择要使用的验证方式。",
+    "usePasskey": "使用通行密钥",
+    "useTotp": "使用 Authenticator APP",
+    "totpTitle": "输入验证码或恢复码",
+    "totpMessage": "输入 6 位 Authenticator 验证码，或输入一条恢复码完成此次敏感操作验证。",
+    "totpPlaceholder": "6 位验证码或恢复码",
+    "cancelled": "已取消敏感操作验证"
   },
   "modal": {
     "deleteApp": {

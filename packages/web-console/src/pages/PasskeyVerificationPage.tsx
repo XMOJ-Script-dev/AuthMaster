@@ -6,6 +6,8 @@ import { api } from '../api/client';
 import { useAuth } from '../contexts/AuthContext';
 import { setPasskeyTrusted } from '../utils/passkey';
 
+type VerificationMethod = 'passkey' | 'totp';
+
 export function PasskeyVerificationPage() {
   const { t } = useTranslation();
   const [searchParams] = useSearchParams();
@@ -14,6 +16,11 @@ export function PasskeyVerificationPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [email, setEmail] = useState('');
+  const [method, setMethod] = useState<VerificationMethod>('passkey');
+  const [totpCode, setTotpCode] = useState('');
+  const [recoveryCode, setRecoveryCode] = useState('');
+  const [useRecoveryCode, setUseRecoveryCode] = useState(false);
+  const [mfaStatus, setMfaStatus] = useState<{ passkey_count: number; totp_enabled: boolean } | null>(null);
 
   const mode = searchParams.get('mode') || 'login';
   const next = searchParams.get('next') || '/dashboard';
@@ -31,6 +38,24 @@ export function PasskeyVerificationPage() {
       setEmail(searchParams.get('email') || '');
     }
   }, [isAuthenticated, mode, navigate, searchParams, user?.email]);
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      return;
+    }
+
+    const loadMfaStatus = async () => {
+      try {
+        const status = await api.getMFAStatus();
+        setMfaStatus(status);
+        setMethod(status.passkey_count > 0 ? 'passkey' : 'totp');
+      } catch (err: any) {
+        setError(err?.message || t('passkeyVerification.failed'));
+      }
+    };
+
+    loadMfaStatus();
+  }, [isAuthenticated, t]);
 
   const title = useMemo(() => {
     if (mode === 'authorize') {
@@ -73,6 +98,23 @@ export function PasskeyVerificationPage() {
     }
   };
 
+  const handleTotpVerify = async () => {
+    setError('');
+    setLoading(true);
+
+    try {
+      await api.verifyTOTP(useRecoveryCode ? { recovery_code: recoveryCode } : { code: totpCode });
+      if (user?.id) {
+        setPasskeyTrusted(user.id);
+      }
+      navigate(next, { replace: true });
+    } catch (err: any) {
+      setError(err?.message || t('passkeyVerification.failed'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleBack = () => {
     navigate(-1);
   };
@@ -97,13 +139,66 @@ export function PasskeyVerificationPage() {
         </div>
 
         <div className="px-8 py-6 space-y-4">
+          {mfaStatus && (mfaStatus.passkey_count > 0 || mfaStatus.totp_enabled) && (
+            <div className="flex gap-2 rounded-lg bg-gray-100 p-1">
+              {mfaStatus.passkey_count > 0 && (
+                <button
+                  onClick={() => setMethod('passkey')}
+                  className={`flex-1 rounded-md px-3 py-2 text-sm font-semibold ${method === 'passkey' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600'}`}
+                >
+                  {t('passkeyVerification.usePasskey')}
+                </button>
+              )}
+              {mfaStatus.totp_enabled && (
+                <button
+                  onClick={() => setMethod('totp')}
+                  className={`flex-1 rounded-md px-3 py-2 text-sm font-semibold ${method === 'totp' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600'}`}
+                >
+                  {t('passkeyVerification.useTotp')}
+                </button>
+              )}
+            </div>
+          )}
+
           <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
             <ul className="space-y-2 text-sm text-gray-700">
-              <li className="flex items-start gap-2"><span className="text-green-700">✓</span><span>{t('passkeyVerification.item1')}</span></li>
-              <li className="flex items-start gap-2"><span className="text-green-700">✓</span><span>{t('passkeyVerification.item2')}</span></li>
-              <li className="flex items-start gap-2"><span className="text-green-700">✓</span><span>{t('passkeyVerification.item3')}</span></li>
+              <li className="flex items-start gap-2"><span className="text-green-700">✓</span><span>{method === 'totp' ? t('passkeyVerification.totpItem1') : t('passkeyVerification.item1')}</span></li>
+              <li className="flex items-start gap-2"><span className="text-green-700">✓</span><span>{method === 'totp' ? t('passkeyVerification.totpItem2') : t('passkeyVerification.item2')}</span></li>
+              <li className="flex items-start gap-2"><span className="text-green-700">✓</span><span>{method === 'totp' ? t('passkeyVerification.totpItem3') : t('passkeyVerification.item3')}</span></li>
             </ul>
           </div>
+
+          {method === 'totp' && (
+            <div className="space-y-3 rounded-lg border border-gray-200 bg-white p-4">
+              <label className="block text-sm font-medium text-gray-700">
+                {useRecoveryCode ? t('passkeyVerification.recoveryCodeLabel') : t('passkeyVerification.totpCodeLabel')}
+              </label>
+              <input
+                value={useRecoveryCode ? recoveryCode : totpCode}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  if (useRecoveryCode) {
+                    setRecoveryCode(v);
+                  } else {
+                    const digits = v.replace(/\D+/g, '').slice(0, 6);
+                    setTotpCode(digits);
+                    if (digits.length === 6 && !loading) {
+                      setTimeout(handleTotpVerify, 0);
+                    }
+                  }
+                }}
+                placeholder={useRecoveryCode ? t('passkeyVerification.recoveryCodePlaceholder') : t('passkeyVerification.totpCodePlaceholder')}
+                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+              />
+              <button
+                onClick={() => setUseRecoveryCode(prev => !prev)}
+                type="button"
+                className="text-sm font-medium text-blue-600 hover:text-blue-700"
+              >
+                {useRecoveryCode ? t('passkeyVerification.useTotpInstead') : t('passkeyVerification.lostTotp')}
+              </button>
+            </div>
+          )}
 
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
@@ -120,11 +215,11 @@ export function PasskeyVerificationPage() {
               {t('passkeyVerification.back')}
             </button>
             <button
-              onClick={handleVerify}
+              onClick={method === 'totp' ? handleTotpVerify : handleVerify}
               disabled={loading}
               className="flex-1 bg-gray-900 hover:bg-black text-white py-2 px-4 rounded-md font-semibold disabled:opacity-50"
             >
-              {loading ? t('passkeyVerification.verifying') : t('passkeyVerification.verify')}
+              {loading ? t('passkeyVerification.verifying') : method === 'totp' ? t('passkeyVerification.verifyTotp') : t('passkeyVerification.verify')}
             </button>
           </div>
         </div>

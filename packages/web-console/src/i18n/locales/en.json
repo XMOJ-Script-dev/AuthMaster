@@ -373,6 +373,38 @@
         "multiDevice": "Multi-device",
         "hybrid": "Hybrid"
       }
+    },
+    "authenticator": {
+      "title": "Authenticator App",
+      "subtitle": "Use time-based one-time codes as an alternative verification method alongside passkeys.",
+      "enabled": "Enabled",
+      "disabled": "Disabled",
+      "setup": "Set up Authenticator App",
+      "setupFailed": "Unable to start Authenticator App setup",
+      "loadFailed": "Unable to load Authenticator App status",
+      "qrAlt": "Authenticator App QR code",
+      "scanHint": "Scan the QR code with Google Authenticator, 1Password, Bitwarden, or any compatible app, or enter the key manually.",
+      "manualKey": "Manual setup key",
+      "codeLabel": "Enter the 6-digit code from your app",
+      "codePlaceholder": "123456",
+      "confirmSetup": "Confirm and enable",
+      "enableSuccess": "Authenticator App enabled",
+      "enableFailed": "Unable to enable Authenticator App",
+      "disable": "Disable Authenticator App",
+      "disableConfirm": "This will remove the current Authenticator App and all recovery codes. Continue?",
+      "disableSuccess": "Authenticator App disabled",
+      "disableFailed": "Unable to disable Authenticator App",
+      "recoveryRemaining": "Recovery codes remaining",
+      "regenerateRecoveryCodes": "Regenerate recovery codes",
+      "regeneratePrompt": "Enter a current 6-digit Authenticator code, or enter a recovery code to regenerate recovery codes",
+      "recoveryRegenerated": "Recovery codes regenerated",
+      "recoveryRegenerateFailed": "Unable to regenerate recovery codes",
+      "recoveryCodesTitle": "Recovery codes",
+      "recoveryCodesHint": "Save these recovery codes now. Each code can only be used once.",
+      "copyRecoveryCodes": "Copy",
+      "downloadRecoveryCodes": "Download TXT",
+      "printRecoveryCodes": "Print",
+      "recoveryCopied": "Recovery codes copied"
     }
   },
   "passkeyVerification": {
@@ -386,9 +418,31 @@
     "account": "Account",
     "back": "Go back",
     "verify": "Verify with Passkey",
+    "verifyTotp": "Verify with code",
     "verifying": "Verifying...",
     "failed": "Passkey verification failed",
-    "emailRequired": "Enter your account email before verifying"
+    "emailRequired": "Enter your account email before verifying",
+    "usePasskey": "Use passkey",
+    "useTotp": "Use Authenticator App",
+    "totpCodeLabel": "Authenticator code",
+    "totpCodePlaceholder": "Enter the 6-digit code",
+    "recoveryCodeLabel": "Recovery code",
+    "recoveryCodePlaceholder": "Enter a recovery code",
+    "lostTotp": "Lost access to your Authenticator App? Use a recovery code",
+    "useTotpInstead": "Use an Authenticator code instead",
+    "totpItem1": "Open your Authenticator App and enter the current 6-digit code",
+    "totpItem2": "If you lose access to the device, you can verify with a recovery code",
+    "totpItem3": "After verification, this device will be marked as trusted"
+  },
+  "sensitiveAction": {
+    "title": "Confirm sensitive action",
+    "chooseMethod": "Choose which verification method to use.",
+    "usePasskey": "Use passkey",
+    "useTotp": "Use Authenticator App",
+    "totpTitle": "Enter code or recovery code",
+    "totpMessage": "Enter a current 6-digit Authenticator code, or enter a recovery code to approve this sensitive action.",
+    "totpPlaceholder": "6-digit code or recovery code",
+    "cancelled": "Sensitive action verification was cancelled"
   },
   "modal": {
     "deleteApp": {

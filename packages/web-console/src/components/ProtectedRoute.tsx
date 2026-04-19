@@ -31,8 +31,8 @@ export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) 
       }
 
       try {
-        const passkeys = await api.getPasskeys();
-        if (!cancelled && passkeys.passkeys.length > 0) {
+        const mfaStatus = await api.getMFAStatus();
+        if (!cancelled && (mfaStatus.passkey_count > 0 || mfaStatus.totp_enabled)) {
           navigate(`/passkey-verification?mode=login&next=${encodeURIComponent(location.pathname + location.search)}`, { replace: true });
           return;
         }

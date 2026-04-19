@@ -31,8 +31,8 @@ export function AuthorizePage() {
 
     const run = async () => {
       if (user?.id && !isPasskeyTrusted(user.id)) {
-        const passkeys = await api.getPasskeys();
-        if (passkeys.passkeys.length > 0) {
+        const mfaStatus = await api.getMFAStatus();
+        if (mfaStatus.passkey_count > 0 || mfaStatus.totp_enabled) {
           navigate(`/passkey-verification?mode=authorize&next=${encodeURIComponent(window.location.href)}`);
           return;
         }

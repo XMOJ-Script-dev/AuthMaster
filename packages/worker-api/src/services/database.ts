@@ -10,6 +10,8 @@ import {
   PasskeyCredential,
   PasskeyCredentialPublic,
   PasskeyChallenge,
+  TOTPCredential,
+  TOTPSetupChallenge,
   AccountRole,
   AccountStatus,
   AdminUserListItem,
@@ -412,6 +414,133 @@ export class Database {
       .prepare('DELETE FROM passkey_credentials WHERE id = ?')
       .bind(id)
       .run();
+  }
+
+  async getTOTPCredential(userId: string): Promise<TOTPCredential | null> {
+    const result = await this.db
+      .prepare('SELECT * FROM totp_credentials WHERE user_id = ?')
+      .bind(userId)
+      .first<any>();
+
+    if (!result) {
+      return null;
+    }
+
+    return {
+      user_id: result.user_id,
+      secret_encrypted: result.secret_encrypted,
+      enabled_at: result.enabled_at,
+      created_at: result.created_at,
+      updated_at: result.updated_at,
+    };
+  }
+
+  async upsertTOTPCredential(userId: string, secretEncrypted: string): Promise<TOTPCredential> {
+    const now = new Date().toISOString();
+    const existing = await this.getTOTPCredential(userId);
+
+    if (existing) {
+      await this.db
+        .prepare('UPDATE totp_credentials SET secret_encrypted = ?, enabled_at = ?, updated_at = ? WHERE user_id = ?')
+        .bind(secretEncrypted, now, now, userId)
+        .run();
+    } else {
+      await this.db
+        .prepare('INSERT INTO totp_credentials (user_id, secret_encrypted, enabled_at, created_at, updated_at) VALUES (?, ?, ?, ?, ?)')
+        .bind(userId, secretEncrypted, now, now, now)
+        .run();
+    }
+
+    return {
+      user_id: userId,
+      secret_encrypted: secretEncrypted,
+      enabled_at: now,
+      created_at: existing?.created_at || now,
+      updated_at: now,
+    };
+  }
+
+  async deleteTOTPCredential(userId: string): Promise<void> {
+    await this.db.prepare('DELETE FROM totp_credentials WHERE user_id = ?').bind(userId).run();
+  }
+
+  async createTOTPSetupChallenge(input: {
+    user_id: string;
+    secret_encrypted: string;
+    recovery_code_hashes: string[];
+    expires_at: string;
+  }): Promise<TOTPSetupChallenge> {
+    const id = crypto.randomUUID();
+    const now = new Date().toISOString();
+
+    await this.db
+      .prepare(
+        'INSERT INTO totp_setup_challenges (id, user_id, secret_encrypted, recovery_code_hashes, expires_at, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)'
+      )
+      .bind(id, input.user_id, input.secret_encrypted, JSON.stringify(input.recovery_code_hashes), input.expires_at, now, now)
+      .run();
+
+    return {
+      id,
+      user_id: input.user_id,
+      secret_encrypted: input.secret_encrypted,
+      recovery_code_hashes: input.recovery_code_hashes,
+      expires_at: input.expires_at,
+      created_at: now,
+      updated_at: now,
+    };
+  }
+
+  async getTOTPSetupChallenge(id: string): Promise<TOTPSetupChallenge | null> {
+    const result = await this.db.prepare('SELECT * FROM totp_setup_challenges WHERE id = ?').bind(id).first<any>();
+    if (!result) {
+      return null;
+    }
+
+    return {
+      id: result.id,
+      user_id: result.user_id,
+      secret_encrypted: result.secret_encrypted,
+      recovery_code_hashes: JSON.parse(result.recovery_code_hashes),
+      expires_at: result.expires_at,
+      created_at: result.created_at,
+      updated_at: result.updated_at,
+    };
+  }
+
+  async deleteTOTPSetupChallengesByUserId(userId: string): Promise<void> {
+    await this.db.prepare('DELETE FROM totp_setup_challenges WHERE user_id = ?').bind(userId).run();
+  }
+
+  async replaceRecoveryCodes(userId: string, hashes: string[]): Promise<void> {
+    const now = new Date().toISOString();
+    await this.db.prepare('DELETE FROM recovery_codes WHERE user_id = ?').bind(userId).run();
+
+    for (const hash of hashes) {
+      await this.db
+        .prepare('INSERT INTO recovery_codes (id, user_id, code_hash, created_at, updated_at) VALUES (?, ?, ?, ?, ?)')
+        .bind(crypto.randomUUID(), userId, hash, now, now)
+        .run();
+    }
+  }
+
+  async countRemainingRecoveryCodes(userId: string): Promise<number> {
+    const result = await this.db
+      .prepare('SELECT COUNT(*) AS total FROM recovery_codes WHERE user_id = ? AND used_at IS NULL')
+      .bind(userId)
+      .first<{ total: number | string }>();
+
+    return Number(result?.total || 0);
+  }
+
+  async consumeRecoveryCode(userId: string, codeHash: string): Promise<boolean> {
+    const now = new Date().toISOString();
+    const result = await this.db
+      .prepare('UPDATE recovery_codes SET used_at = ?, updated_at = ? WHERE user_id = ? AND code_hash = ? AND used_at IS NULL')
+      .bind(now, now, userId, codeHash)
+      .run();
+
+    return (result.meta?.changes || 0) > 0;
   }
 
   async listUsers(options: {
