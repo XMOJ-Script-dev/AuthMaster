@@ -48,6 +48,14 @@ export function Navbar() {
                     {t('nav.applications')}
                   </Link>
                 )}
+                {canManageApps && (
+                  <Link
+                    to="/docs"
+                    className="px-3 py-1.5 rounded-gh text-sm text-white/80 hover:text-white hover:bg-gh-header-hover transition-colors"
+                  >
+                    {t('nav.docs')}
+                  </Link>
+                )}
                 {isAdmin && (
                   <Link
                     to="/admin"

@@ -16,6 +16,7 @@ import { AdminDashboardPage } from './pages/AdminDashboardPage';
 import { AdminPendingAppsPage } from './pages/AdminPendingAppsPage';
 import { AdminUsersPage } from './pages/AdminUsersPage';
 import { AdminSystemSettingsPage } from './pages/AdminSystemSettingsPage';
+import { DocsPage } from './pages/DocsPage';
 
 function App() {
   return (
@@ -106,6 +107,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <AccountSecurityPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/docs"
+              element={
+                <ProtectedRoute allowedRoles={['merchant', 'admin']}>
+                  <DocsPage />
                 </ProtectedRoute>
               }
             />

@@ -1,152 +1,158 @@
 # AuthMaster
 
-开源的 OAuth2.0/OIDC 认证服务器，部署在 Cloudflare 上。
+> Open-source OAuth 2.0 / OpenID Connect authorization server — deployed on Cloudflare Workers.
 
-## 特性
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-- ✅ 完整的 OAuth2.0 和 OpenID Connect 支持
-- ✅ 用户注册、登录、密码重置
-- ✅ 第三方应用接入管理
-- ✅ API 调用统计和流量监控
-- ✅ 基于 Cloudflare Workers 的无服务器架构
-- ✅ 全球 CDN 分发
-- ✅ 企业级安全性（DDoS 防护、WAF）
+---
 
-## 技术栈
+## Features
 
-- **前端**: React + Vite + TypeScript
-- **后端**: Cloudflare Workers
-- **数据库**: Cloudflare D1 (SQLite)
-- **缓存**: Cloudflare KV
-- **部署**: Cloudflare Pages + Workers
+- **Full OAuth 2.0 + OIDC** — Authorization Code, Client Credentials, and Refresh Token flows
+- **WebAuthn / Passkeys** — Passwordless sign-in with hardware security keys or biometrics
+- **TOTP (Authenticator App)** — Time-based one-time passwords for two-factor authentication
+- **PKCE support** — Proof Key for Code Exchange for public clients (SPAs, mobile apps)
+- **XMOJ integration** — Bind competitive-programming accounts to user profiles
+- **Role-based access** — `user`, `merchant`, and `admin` roles with granular permissions
+- **Edge-native** — Cloudflare Workers, D1 (SQLite), and KV — no servers to manage
+- **30-day sessions** — JWT tokens persist across browser restarts
 
-## 快速开始
+## Tech Stack
 
-### 前置要求
+| Layer    | Technology                                   |
+|----------|----------------------------------------------|
+| Frontend | React 18 + Vite + TypeScript + Tailwind CSS  |
+| Backend  | Cloudflare Workers (Hono router)             |
+| Database | Cloudflare D1 (SQLite)                       |
+| Cache    | Cloudflare KV                                |
+| Deploy   | Cloudflare Pages + Workers                   |
+
+## Repository Layout
+
+```
+AuthMaster/
+├── packages/
+│   ├── shared/           # Shared types, constants, validation
+│   ├── worker-api/       # Cloudflare Workers backend
+│   │   ├── migrations/   # D1 SQL migrations (0001 – 0010)
+│   │   └── src/
+│   │       ├── routes/   # API route handlers
+│   │       └── services/ # Business logic (auth, oauth, passkey, totp…)
+│   └── web-console/      # React frontend console
+│       └── src/
+│           ├── pages/    # Route-level page components
+│           ├── components/
+│           └── i18n/     # en / zh locale strings
+├── docs/                 # Reference documentation
+└── turbo.json            # Turborepo pipeline config
+```
+
+## Quick Start (Local Development)
+
+### Prerequisites
 
 - Node.js 18+
-- pnpm 或 npm
-- Cloudflare 账号
-- Wrangler CLI
+- pnpm (recommended) or npm
+- Cloudflare account + [Wrangler CLI](https://developers.cloudflare.com/workers/wrangler/install-and-update/)
 
-### 安装依赖
+### 1. Install dependencies
 
 ```bash
 npm install
 ```
 
-### 配置环境变量
+### 2. Configure environment variables
 
-#### 后端配置
-
-创建 `packages/worker-api/.dev.vars` 文件：
+**Backend** — create `packages/worker-api/.dev.vars`:
 
 ```bash
-cd packages/worker-api
-cp .dev.vars.example .dev.vars
+JWT_SECRET=<random 32-byte hex>
+ENCRYPTION_KEY=<random 32-byte hex>
+FRONTEND_URL=http://localhost:5173
+ISSUER=http://localhost:8787
+XMOJ_BASE_URL=https://xmoj.tech
 ```
 
-编辑 `.dev.vars` 文件，生成密钥：
+Generate random keys:
 
 ```bash
-# 生成 JWT 密钥
-echo "JWT_SECRET=$(node -e "console.log(require('crypto').randomBytes(32).toString('hex'))")"
-
-# 生成加密密钥
-echo "ENCRYPTION_KEY=$(node -e "console.log(require('crypto').randomBytes(32).toString('hex'))")"
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 ```
 
-#### 前端配置
-
-创建 `packages/web-console/.env` 文件：
+**Frontend** — create `packages/web-console/.env`:
 
 ```bash
-cd packages/web-console
-cp .env.example .env
-```
-
-默认配置：
-
-```
 VITE_API_URL=http://localhost:8787
 ```
 
-### 本地开发
-
-启动后端开发服务器（确保已配置 `.dev.vars`）：
+### 3. Set up the local database
 
 ```bash
+cd packages/worker-api
+npx wrangler d1 create authmaster-db --local
+npx wrangler d1 migrations apply authmaster-db --local
+```
+
+### 4. Start development servers
+
+Open two terminals:
+
+```bash
+# Terminal 1 — backend
 cd packages/worker-api
 npm run dev
+# API available at http://localhost:8787
+
+# Terminal 2 — frontend
+cd packages/web-console
+npm run dev
+# Console available at http://localhost:5173
 ```
 
-后端 API 将运行在 `http://localhost:8787`
+## Deployment
 
-启动前端开发服务器（确保已配置 `.env`）：
-
-```bash
-查看完整的[部署指南](./docs/DEPLOYMENT.md)了解详细配置步骤。
-
-#### 快速部署
-
-部署 Worker API：
+See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for the full walkthrough. Quick reference:
 
 ```bash
+# Deploy the Worker API
 cd packages/worker-api
-# 配置生产环境密钥（仅首次）
 npx wrangler secret put JWT_SECRET
 npx wrangler secret put ENCRYPTION_KEY
-# 部署
 npm run deploy
-```
 
-部署前端到 Cloudflare Pages：
-
-```bash
+# Deploy the frontend to Cloudflare Pages
 cd packages/web-console
 npm run build
 npx wrangler pages deploy dist --project-name=authmaster
 ```
 
-**重要**: 部署后需要在 Cloudflare 控制台配置环境变量：
+After deploying, set environment variables in the Cloudflare dashboard:
 
-- 后端: 在 `wrangler.toml` 中设置 `FRONTEND_URL`
-- 前端: 在 Cloudflare Pages 设置中添加 `VITE_API_URL部署 Worker API
-  cd packages/worker-api
-  npm run deploy
+- Worker: `FRONTEND_URL`, `ISSUER`, `XMOJ_BASE_URL`
+- Pages: `VITE_API_URL`
 
-# 部署前端到 Cloudflare Pages
+## Documentation
 
-```
-cd packages/web-console
-npm run build
-npm run deploy
-```
+| Document | Description |
+|----------|-------------|
+| [Developer Docs](docs/OAUTH2.md) | OAuth 2.0 flow, PKCE, scopes, token API, code examples |
+| [API Reference](docs/API.md) | REST endpoint reference |
+| [Integration Guide](docs/MERCHANT_USER_CALLBACK_GUIDE.md) | End-to-end merchant integration with callback examples |
+| [Deployment Guide](docs/DEPLOYMENT.md) | Cloudflare setup, secrets, migrations |
+| [Development Guide](docs/DEVELOPMENT.md) | Local dev environment, project conventions |
 
-## 项目结构
+## Account Types
 
-```
-authmaster/
-├── packages/
-│   ├── worker-api/       # Cloudflare Workers 后端
-│   ├── web-console/      # React 前端控制台
-│   └── shared/           # 共享类型和工具
-├── docs/                 # 文档
-└── README.md
-```
+| Role | Capabilities |
+|------|-------------|
+| `user` | Sign in, manage authorizations, bind XMOJ |
+| `merchant` | All of the above + create and manage OAuth applications |
+| `admin` | All of the above + approve apps, manage users, system settings |
 
-## 文档
+## Contributing
 
-- [API 文档](./docs/API.md)
-- [部署指南](./docs/DEPLOYMENT.md)
-- [OAuth2 流程](./docs/OAUTH2.md)
-- [商户与用户接入及回调演示](./docs/MERCHANT_USER_CALLBACK_GUIDE.md)
-- [开发指南](./docs/DEVELOPMENT.md)
+Contributions are welcome! Please open an issue first to discuss what you'd like to change. Pull requests should target the `master` branch and include a clear description of the change.
 
 ## License
 
-MIT License - 详见 [LICENSE](./LICENSE) 文件
-
-## 贡献
-
-欢迎提交 Issue 和 Pull Request！
+[MIT](LICENSE)
