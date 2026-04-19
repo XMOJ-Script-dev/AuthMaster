@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../api/client';
+import { usePageTitle } from '../utils/usePageTitle';
 
 export function AdminSystemSettingsPage() {
   const { t } = useTranslation();
+  usePageTitle(t('admin.settings.title'));
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');

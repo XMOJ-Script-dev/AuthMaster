@@ -2,9 +2,11 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
+import { usePageTitle } from '../utils/usePageTitle';
 
 export function RegisterPage() {
   const { t } = useTranslation();
+  usePageTitle(t('nav.register'));
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -45,33 +47,36 @@ export function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4">
-      <div className="max-w-md w-full bg-white rounded-lg shadow-md p-8">
-        <h2 className="text-3xl font-bold text-center text-gray-900 mb-8">
-          {t('auth.register.title')}
-        </h2>
+    <div className="min-h-screen bg-gh-canvas flex flex-col items-center justify-center py-12 px-4">
+      {/* Logo */}
+      <div className="mb-6 flex flex-col items-center">
+        <img src="/favicon.png" alt="AuthMaster" width="48" height="48" className="rounded-md" />
+        <h1 className="mt-3 text-2xl font-semibold text-gh-fg">{t('auth.register.title')}</h1>
+      </div>
 
+      {/* Card */}
+      <div className="w-full max-w-sm rounded-gh border border-gh-border bg-white px-6 py-5 shadow-gh-sm">
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
+          <div className="mb-4 rounded-gh border border-gh-danger-border bg-gh-danger-subtle px-3 py-2 text-sm text-gh-danger">
             {error}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label htmlFor="accountType" className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="accountType" className="mb-1 block text-sm font-semibold text-gh-fg">
               {t('auth.register.accountTypeLabel')}
             </label>
             <select
               id="accountType"
               value={accountType}
               onChange={(e) => setAccountType(e.target.value as 'user' | 'merchant')}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full rounded-gh border border-gh-border bg-white px-3 py-1.5 text-sm text-gh-fg shadow-gh-sm focus:border-gh-accent focus:outline-none focus:ring-2 focus:ring-gh-accent/30"
             >
               <option value="user">{t('auth.register.accountTypeUser')}</option>
               <option value="merchant">{t('auth.register.accountTypeMerchant')}</option>
             </select>
-            <p className="text-xs text-gray-500 mt-2">
+            <p className="mt-1.5 text-xs text-gh-fg-muted">
               {accountType === 'merchant'
                 ? t('auth.register.accountTypeMerchantHint')
                 : t('auth.register.accountTypeUserHint')}
@@ -79,7 +84,7 @@ export function RegisterPage() {
           </div>
 
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="email" className="mb-1 block text-sm font-semibold text-gh-fg">
               {t('auth.register.email')}
             </label>
             <input
@@ -88,13 +93,13 @@ export function RegisterPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full rounded-gh border border-gh-border bg-white px-3 py-1.5 text-sm text-gh-fg placeholder-gh-fg-subtle shadow-gh-sm focus:border-gh-accent focus:outline-none focus:ring-2 focus:ring-gh-accent/30"
               placeholder={t('auth.login.emailPlaceholder')}
             />
           </div>
 
           <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="password" className="mb-1 block text-sm font-semibold text-gh-fg">
               {t('auth.register.password')}
             </label>
             <input
@@ -103,13 +108,13 @@ export function RegisterPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full rounded-gh border border-gh-border bg-white px-3 py-1.5 text-sm text-gh-fg shadow-gh-sm focus:border-gh-accent focus:outline-none focus:ring-2 focus:ring-gh-accent/30"
               placeholder="••••••••"
             />
           </div>
 
           <div>
-            <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="confirmPassword" className="mb-1 block text-sm font-semibold text-gh-fg">
               {t('auth.register.confirmPassword')}
             </label>
             <input
@@ -118,7 +123,7 @@ export function RegisterPage() {
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               required
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full rounded-gh border border-gh-border bg-white px-3 py-1.5 text-sm text-gh-fg shadow-gh-sm focus:border-gh-accent focus:outline-none focus:ring-2 focus:ring-gh-accent/30"
               placeholder="••••••••"
             />
           </div>
@@ -126,18 +131,19 @@ export function RegisterPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-md font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full rounded-gh border border-gh-btn-primary-border bg-gh-btn-primary px-4 py-1.5 text-sm font-semibold text-white shadow-gh-sm hover:bg-gh-btn-primary-hover disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
           >
             {loading ? t('auth.register.submitting') : t('auth.register.submit')}
           </button>
         </form>
+      </div>
 
-        <div className="mt-6 text-center text-sm text-gray-600">
-          {t('auth.register.hasAccount')}{' '}
-          <Link to="/login" className="text-blue-600 hover:text-blue-700 font-medium">
-            {t('auth.register.signIn')}
-          </Link>
-        </div>
+      {/* Footer link */}
+      <div className="mt-4 w-full max-w-sm rounded-gh border border-gh-border bg-white px-6 py-4 text-center text-sm text-gh-fg-muted shadow-gh-sm">
+        {t('auth.register.hasAccount')}{' '}
+        <Link to="/login" className="font-semibold text-gh-accent hover:underline">
+          {t('auth.register.signIn')}
+        </Link>
       </div>
     </div>
   );

@@ -5,9 +5,11 @@ import QRCode from 'qrcode';
 import { api, MFAStatusResponse, PasskeyItem, TOTPSetupResponse } from '../api/client';
 import { useAuth } from '../contexts/AuthContext';
 import { clearPasskeyTrusted, isPasskeyTrusted } from '../utils/passkey';
+import { usePageTitle } from '../utils/usePageTitle';
 
 export function AccountSecurityPage() {
   const { t } = useTranslation();
+  usePageTitle(t('nav.accountSecurity'));
   const { user } = useAuth();
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');

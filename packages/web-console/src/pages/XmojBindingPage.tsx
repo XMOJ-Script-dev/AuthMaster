@@ -4,6 +4,7 @@ import { api } from '../api/client';
 import { useAuth } from '../contexts/AuthContext';
 import { ConfirmModal } from '../components/ConfirmModal';
 import { ensurePasskeyForSensitiveAction } from '../utils/passkeyAction';
+import { usePageTitle } from '../utils/usePageTitle';
 
 function generateBookmarklet(dest: string, loginRequiredText: string): string {
   const code =
@@ -42,6 +43,7 @@ function parseSessionHash(hash: string): { username: string; phpsessid: string }
 
 export function XmojBindingPage() {
   const { t } = useTranslation();
+  usePageTitle(t('nav.xmojBinding'));
   const { user, setSession } = useAuth();
   const isDesktop =
     typeof window !== 'undefined' &&

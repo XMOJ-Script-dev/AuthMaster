@@ -5,9 +5,11 @@ import { useTranslation } from 'react-i18next';
 import { startAuthentication } from '@simplewebauthn/browser';
 import { api } from '../api/client';
 import { getLastPasskeyEmail, isPasskeyTrusted, setLastPasskeyEmail, setPasskeyTrusted } from '../utils/passkey';
+import { usePageTitle } from '../utils/usePageTitle';
 
 export function LoginPage() {
   const { t } = useTranslation();
+  usePageTitle(t('nav.login'));
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -106,21 +108,24 @@ export function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4">
-      <div className="max-w-md w-full bg-white rounded-lg shadow-md p-8">
-        <h2 className="text-3xl font-bold text-center text-gray-900 mb-8">
-          {t('auth.login.title')}
-        </h2>
+    <div className="min-h-screen bg-gh-canvas flex flex-col items-center justify-center py-12 px-4">
+      {/* Logo */}
+      <div className="mb-6 flex flex-col items-center">
+        <img src="/favicon.png" alt="AuthMaster" width="48" height="48" className="rounded-md" />
+        <h1 className="mt-3 text-2xl font-semibold text-gh-fg">{t('auth.login.title')}</h1>
+      </div>
 
+      {/* Card */}
+      <div className="w-full max-w-sm rounded-gh border border-gh-border bg-white px-6 py-5 shadow-gh-sm">
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
+          <div className="mb-4 rounded-gh border border-gh-danger-border bg-gh-danger-subtle px-3 py-2 text-sm text-gh-danger">
             {error}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="email" className="mb-1 block text-sm font-semibold text-gh-fg">
               {t('auth.login.email')}
             </label>
             <input
@@ -129,13 +134,13 @@ export function LoginPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full rounded-gh border border-gh-border bg-white px-3 py-1.5 text-sm text-gh-fg placeholder-gh-fg-subtle shadow-gh-sm focus:border-gh-accent focus:outline-none focus:ring-2 focus:ring-gh-accent/30"
               placeholder={t('auth.login.emailPlaceholder')}
             />
           </div>
 
           <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="password" className="mb-1 block text-sm font-semibold text-gh-fg">
               {t('auth.login.password')}
             </label>
             <input
@@ -144,7 +149,7 @@ export function LoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full rounded-gh border border-gh-border bg-white px-3 py-1.5 text-sm text-gh-fg shadow-gh-sm focus:border-gh-accent focus:outline-none focus:ring-2 focus:ring-gh-accent/30"
               placeholder="••••••••"
             />
           </div>
@@ -152,27 +157,33 @@ export function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-md font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full rounded-gh border border-gh-btn-primary-border bg-gh-btn-primary px-4 py-1.5 text-sm font-semibold text-white shadow-gh-sm hover:bg-gh-btn-primary-hover disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
           >
             {loading ? t('auth.login.submitting') : t('auth.login.submit')}
           </button>
+        </form>
 
+        <div className="mt-4 border-t border-gh-border pt-4">
           <button
             type="button"
             onClick={handlePasskeyLogin}
             disabled={loading || passkeyLoading}
-            className="w-full bg-gray-900 hover:bg-black text-white py-2 px-4 rounded-md font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full rounded-gh border border-gh-border bg-gh-canvas px-4 py-1.5 text-sm font-semibold text-gh-fg shadow-gh-sm hover:bg-gray-100 disabled:opacity-60 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
           >
+            <svg className="h-4 w-4" viewBox="0 0 16 16" fill="currentColor">
+              <path d="M8 0a4 4 0 100 8A4 4 0 008 0zm0 1.5a2.5 2.5 0 110 5 2.5 2.5 0 010-5zM2 14a6 6 0 1112 0H2z"/>
+            </svg>
             {passkeyLoading ? t('auth.login.passkeySubmitting') : t('auth.login.passkeySubmit')}
           </button>
-        </form>
-
-        <div className="mt-6 text-center text-sm text-gray-600">
-          {t('auth.login.noAccount')}{' '}
-          <Link to="/register" className="text-blue-600 hover:text-blue-700 font-medium">
-            {t('auth.login.signUp')}
-          </Link>
         </div>
+      </div>
+
+      {/* Footer link */}
+      <div className="mt-4 w-full max-w-sm rounded-gh border border-gh-border bg-white px-6 py-4 text-center text-sm text-gh-fg-muted shadow-gh-sm">
+        {t('auth.login.noAccount')}{' '}
+        <Link to="/register" className="font-semibold text-gh-accent hover:underline">
+          {t('auth.login.signUp')}
+        </Link>
       </div>
     </div>
   );

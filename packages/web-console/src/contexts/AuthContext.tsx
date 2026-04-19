@@ -34,20 +34,36 @@ function parseJwtPayload(token: string): any | null {
   }
 }
 
+function isTokenExpired(token: string): boolean {
+  const payload = parseJwtPayload(token);
+  if (!payload?.exp) return true;
+  return payload.exp < Math.floor(Date.now() / 1000);
+}
+
+function loadStoredToken(): string | null {
+  const token = localStorage.getItem('auth_token');
+  if (!token) return null;
+  if (isTokenExpired(token)) {
+    localStorage.removeItem('auth_token');
+    localStorage.removeItem('auth_user');
+    return null;
+  }
+  return token;
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<UserPublic | null>(() => {
+    // Only restore user if token is still valid
+    if (!loadStoredToken()) return null;
     const raw = localStorage.getItem('auth_user');
-    if (!raw) {
-      return null;
-    }
-
+    if (!raw) return null;
     try {
       return JSON.parse(raw) as UserPublic;
     } catch {
       return null;
     }
   });
-  const [token, setToken] = useState<string | null>(localStorage.getItem('auth_token'));
+  const [token, setToken] = useState<string | null>(loadStoredToken);
 
   useEffect(() => {
     if (token) {

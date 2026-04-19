@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api, AdminUserListItem } from '../api/client';
+import { usePageTitle } from '../utils/usePageTitle';
 
 export function AdminUsersPage() {
   const { t } = useTranslation();
+  usePageTitle(t('admin.users.title'));
   const [users, setUsers] = useState<AdminUserListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');

@@ -14,6 +14,7 @@
     "back": "返回"
   },
   "nav": {
+    "signedInAs": "已登录为",
     "home": "首页",
     "dashboard": "控制台",
     "applications": "应用管理",

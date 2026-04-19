@@ -3,10 +3,21 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
 import { api, AuthorizedAppItem } from '../api/client';
+import { usePageTitle } from '../utils/usePageTitle';
+
+function StatCard({ label, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <div className="rounded-gh border border-gh-border bg-white p-5 shadow-gh-sm">
+      <p className="text-xs font-medium text-gh-fg-muted uppercase tracking-wide">{label}</p>
+      <p className="mt-2 text-3xl font-semibold text-gh-fg">{value}</p>
+    </div>
+  );
+}
 
 export function DashboardPage() {
   const { user } = useAuth();
   const { t } = useTranslation();
+  usePageTitle(t('nav.dashboard'));
   const [authorizedApps, setAuthorizedApps] = useState<AuthorizedAppItem[]>([]);
   const [xmojBound, setXmojBound] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -21,9 +32,7 @@ export function DashboardPage() {
   );
 
   useEffect(() => {
-    if (isMerchantView || isAdmin) {
-      return;
-    }
+    if (isMerchantView || isAdmin) return;
 
     const loadData = async () => {
       setLoading(true);
@@ -43,7 +52,7 @@ export function DashboardPage() {
     };
 
     loadData();
-  }, [isMerchantView, t]);
+  }, [isMerchantView, isAdmin, t]);
 
   const revokeAuthorization = async (appId: string) => {
     try {
@@ -54,85 +63,22 @@ export function DashboardPage() {
     }
   };
 
-  if (!isMerchantView && !isAdmin) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-8">{t('dashboard.title')}</h1>
-
-        {error && (
-          <div className="mb-6 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-            {error}
-          </div>
-        )}
-
-        <div className="grid md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-gray-500 text-sm font-medium mb-2">{t('dashboard.user.stats.authorizedApps')}</h3>
-            <p className="text-3xl font-bold text-gray-900">{authorizedApps.length}</p>
-          </div>
-
-          <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-gray-500 text-sm font-medium mb-2">{t('dashboard.user.stats.activeTokens')}</h3>
-            <p className="text-3xl font-bold text-gray-900">{activeTokens}</p>
-          </div>
-
-          <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-gray-500 text-sm font-medium mb-2">{t('dashboard.user.stats.xmojBinding')}</h3>
-            <p className="text-3xl font-bold text-gray-900">{xmojBound ? t('dashboard.user.bound') : t('dashboard.user.notBound')}</p>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow p-6 mb-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-semibold text-gray-900">{t('dashboard.user.authorizedAppsTitle')}</h2>
-            <Link to="/xmoj-binding" className="text-sm text-blue-600 hover:text-blue-700 font-medium">
-              {t('dashboard.user.manageXmoj')}
-            </Link>
-          </div>
-
-          {loading ? (
-            <p className="text-gray-500">{t('common.loading')}</p>
-          ) : authorizedApps.length === 0 ? (
-            <p className="text-gray-500">{t('dashboard.user.emptyAuthorizations')}</p>
-          ) : (
-            <div className="space-y-4">
-              {authorizedApps.map(app => (
-                <div key={app.app_id} className="rounded-md border border-gray-200 p-4">
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <h3 className="font-semibold text-gray-900">{app.app_name}</h3>
-                      {app.app_description && <p className="text-sm text-gray-600 mt-1">{app.app_description}</p>}
-                      <p className="text-xs text-gray-500 mt-2">
-                        {t('dashboard.user.scope')}: {app.scope || '-'}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        {t('dashboard.user.activeTokenCount')}: {app.active_tokens}
-                      </p>
-                    </div>
-                    <button
-                      onClick={() => revokeAuthorization(app.app_id)}
-                      className="px-3 py-2 text-sm bg-red-50 text-red-700 rounded-md hover:bg-red-100"
-                    >
-                      {t('dashboard.user.revokeAuthorization')}
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  }
+  const errorBanner = error && (
+    <div className="mb-4 rounded-gh border border-gh-danger-border bg-gh-danger-subtle px-3 py-2 text-sm text-gh-danger">
+      {error}
+    </div>
+  );
 
   if (isAdmin) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-4">{t('dashboard.admin.title')}</h1>
-        <p className="text-gray-600 mb-8">{t('dashboard.admin.subtitle')}</p>
+      <div className="mx-auto max-w-screen-xl px-4 py-8">
+        <div className="mb-6">
+          <h1 className="text-2xl font-semibold text-gh-fg">{t('dashboard.admin.title')}</h1>
+          <p className="mt-1 text-sm text-gh-fg-muted">{t('dashboard.admin.subtitle')}</p>
+        </div>
         <Link
           to="/admin"
-          className="inline-flex items-center rounded-md bg-blue-600 px-5 py-3 text-white hover:bg-blue-700"
+          className="inline-flex items-center rounded-gh border border-gh-btn-primary-border bg-gh-btn-primary px-4 py-1.5 text-sm font-semibold text-white shadow-gh-sm hover:bg-gh-btn-primary-hover transition-colors"
         >
           {t('dashboard.admin.enterConsole')}
         </Link>
@@ -140,61 +86,104 @@ export function DashboardPage() {
     );
   }
 
-  return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold text-gray-900 mb-8">{t('dashboard.title')}</h1>
-
-      <div className="grid md:grid-cols-3 gap-6 mb-8">
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-gray-500 text-sm font-medium mb-2">{t('dashboard.stats.totalApps')}</h3>
-          <p className="text-3xl font-bold text-gray-900">0</p>
+  if (!isMerchantView) {
+    return (
+      <div className="mx-auto max-w-screen-xl px-4 py-8">
+        <div className="mb-6">
+          <h1 className="text-2xl font-semibold text-gh-fg">{t('dashboard.title')}</h1>
         </div>
 
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-gray-500 text-sm font-medium mb-2">{t('dashboard.stats.apiCalls')}</h3>
-          <p className="text-3xl font-bold text-gray-900">0</p>
+        {errorBanner}
+
+        <div className="grid gap-4 md:grid-cols-3 mb-6">
+          <StatCard label={t('dashboard.user.stats.authorizedApps')} value={authorizedApps.length} />
+          <StatCard label={t('dashboard.user.stats.activeTokens')} value={activeTokens} />
+          <StatCard
+            label={t('dashboard.user.stats.xmojBinding')}
+            value={
+              <span className={xmojBound ? 'text-gh-btn-primary' : 'text-gh-fg-muted'}>
+                {xmojBound ? t('dashboard.user.bound') : t('dashboard.user.notBound')}
+              </span>
+            }
+          />
         </div>
 
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-gray-500 text-sm font-medium mb-2">{t('dashboard.stats.activeTokens')}</h3>
-          <p className="text-3xl font-bold text-gray-900">0</p>
+        <div className="rounded-gh border border-gh-border bg-white shadow-gh-sm">
+          <div className="flex items-center justify-between border-b border-gh-border px-4 py-3">
+            <h2 className="text-sm font-semibold text-gh-fg">{t('dashboard.user.authorizedAppsTitle')}</h2>
+            <Link to="/xmoj-binding" className="text-xs font-medium text-gh-accent hover:underline">
+              {t('dashboard.user.manageXmoj')}
+            </Link>
+          </div>
+
+          {loading ? (
+            <p className="px-4 py-6 text-sm text-gh-fg-muted">{t('common.loading')}</p>
+          ) : authorizedApps.length === 0 ? (
+            <p className="px-4 py-6 text-sm text-gh-fg-muted">{t('dashboard.user.emptyAuthorizations')}</p>
+          ) : (
+            <ul>
+              {authorizedApps.map((app, i) => (
+                <li
+                  key={app.app_id}
+                  className={`flex items-start justify-between gap-4 px-4 py-4 ${i !== 0 ? 'border-t border-gh-border' : ''}`}
+                >
+                  <div>
+                    <p className="text-sm font-semibold text-gh-fg">{app.app_name}</p>
+                    {app.app_description && (
+                      <p className="mt-0.5 text-xs text-gh-fg-muted">{app.app_description}</p>
+                    )}
+                    <p className="mt-1 text-xs text-gh-fg-subtle">
+                      {t('dashboard.user.scope')}: {app.scope || '-'} &nbsp;·&nbsp;
+                      {t('dashboard.user.activeTokenCount')}: {app.active_tokens}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => revokeAuthorization(app.app_id)}
+                    className="shrink-0 rounded-gh border border-gh-danger-border bg-gh-danger-subtle px-3 py-1 text-xs font-medium text-gh-danger hover:bg-red-100 transition-colors"
+                  >
+                    {t('dashboard.user.revokeAuthorization')}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       </div>
+    );
+  }
 
-      <div className="bg-white rounded-lg shadow p-6">
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">{t('dashboard.quickStart.title')}</h2>
-        <div className="space-y-4">
-          <div className="flex items-start">
-            <div className="flex-shrink-0 w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center font-semibold">
-              1
-            </div>
-            <div className="ml-4">
-              <h4 className="font-semibold text-gray-900">{t('dashboard.quickStart.step1.title')}</h4>
-              <p className="text-gray-600">{t('dashboard.quickStart.step1.description')}</p>
-            </div>
-          </div>
+  // Merchant view
+  return (
+    <div className="mx-auto max-w-screen-xl px-4 py-8">
+      <div className="mb-6">
+        <h1 className="text-2xl font-semibold text-gh-fg">{t('dashboard.title')}</h1>
+      </div>
 
-          <div className="flex items-start">
-            <div className="flex-shrink-0 w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center font-semibold">
-              2
-            </div>
-            <div className="ml-4">
-              <h4 className="font-semibold text-gray-900">{t('dashboard.quickStart.step2.title')}</h4>
-              <p className="text-gray-600">{t('dashboard.quickStart.step2.description')}</p>
-            </div>
-          </div>
+      <div className="grid gap-4 md:grid-cols-3 mb-6">
+        <StatCard label={t('dashboard.stats.totalApps')} value={0} />
+        <StatCard label={t('dashboard.stats.apiCalls')} value={0} />
+        <StatCard label={t('dashboard.stats.activeTokens')} value={0} />
+      </div>
 
-          <div className="flex items-start">
-            <div className="flex-shrink-0 w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center font-semibold">
-              3
+      <div className="rounded-gh border border-gh-border bg-white shadow-gh-sm">
+        <div className="border-b border-gh-border px-4 py-3">
+          <h2 className="text-sm font-semibold text-gh-fg">{t('dashboard.quickStart.title')}</h2>
+        </div>
+        <div className="divide-y divide-gh-border">
+          {[1, 2, 3].map(step => (
+            <div key={step} className="flex gap-4 px-4 py-4">
+              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gh-btn-primary text-xs font-semibold text-white">
+                {step}
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-gh-fg">{t(`dashboard.quickStart.step${step}.title`)}</p>
+                <p className="mt-0.5 text-xs text-gh-fg-muted">{t(`dashboard.quickStart.step${step}.description`)}</p>
+              </div>
             </div>
-            <div className="ml-4">
-              <h4 className="font-semibold text-gray-900">{t('dashboard.quickStart.step3.title')}</h4>
-              <p className="text-gray-600">{t('dashboard.quickStart.step3.description')}</p>
-            </div>
-          </div>
+          ))}
         </div>
       </div>
     </div>
   );
 }
+

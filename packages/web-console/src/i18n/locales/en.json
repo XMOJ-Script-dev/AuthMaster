@@ -14,6 +14,7 @@
     "back": "Back"
   },
   "nav": {
+    "signedInAs": "Signed in as",
     "home": "Home",
     "dashboard": "Dashboard",
     "applications": "Applications",

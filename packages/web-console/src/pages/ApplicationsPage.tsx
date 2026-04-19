@@ -5,11 +5,13 @@ import { api } from '../api/client';
 import { ConfirmModal } from '../components/ConfirmModal';
 import { useAuth } from '../contexts/AuthContext';
 import { ensurePasskeyForSensitiveAction } from '../utils/passkeyAction';
+import { usePageTitle } from '../utils/usePageTitle';
 
 const SCOPE_OPTIONS = ['openid', 'profile', 'email', 'xmoj_profile', 'read', 'write'];
 
 export function ApplicationsPage() {
   const { t } = useTranslation();
+  usePageTitle(t('applications.title'));
   const { user, setSession } = useAuth();
   const isAdmin = user?.role === 'admin';
   const canManageApps = user?.role === 'merchant' || user?.role === 'admin';

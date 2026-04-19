@@ -2,9 +2,11 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { api, AdminApplicationListItem, AppChangeRequestItem } from '../api/client';
+import { usePageTitle } from '../utils/usePageTitle';
 
 export function AdminPendingAppsPage() {
   const { t } = useTranslation();
+  usePageTitle(t('admin.pending.title'));
   const [pendingApps, setPendingApps] = useState<AdminApplicationListItem[]>([]);
   const [pendingChanges, setPendingChanges] = useState<AppChangeRequestItem[]>([]);
   const [loading, setLoading] = useState(true);

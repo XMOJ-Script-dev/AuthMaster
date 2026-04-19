@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../api/client';
+import { usePageTitle } from '../utils/usePageTitle';
 
 export function ChangePasswordPage() {
   const { t } = useTranslation();
+  usePageTitle(t('nav.changePassword'));
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');

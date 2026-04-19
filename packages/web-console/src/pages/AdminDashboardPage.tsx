@@ -2,9 +2,11 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { api } from '../api/client';
+import { usePageTitle } from '../utils/usePageTitle';
 
 export function AdminDashboardPage() {
   const { t } = useTranslation();
+  usePageTitle(t('admin.dashboard.title'));
   const [userTotal, setUserTotal] = useState(0);
   const [appTotal, setAppTotal] = useState(0);
   const [auditTotal, setAuditTotal] = useState(0);

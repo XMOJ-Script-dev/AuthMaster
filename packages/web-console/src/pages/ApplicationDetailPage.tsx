@@ -3,8 +3,10 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { api } from '../api/client';
 import { ConfirmModal } from '../components/ConfirmModal';
+import { CodeBlock } from '../components/CodeBlock';
 import { useAuth } from '../contexts/AuthContext';
 import { ensurePasskeyForSensitiveAction } from '../utils/passkeyAction';
+import { usePageTitle } from '../utils/usePageTitle';
 
 const SCOPE_OPTIONS = ['openid', 'profile', 'email', 'xmoj_profile', 'read', 'write'];
 
@@ -15,6 +17,7 @@ export function ApplicationDetailPage() {
   const { appId } = useParams<{ appId: string }>();
   const navigate = useNavigate();
   const [application, setApplication] = useState<any>(null);
+  usePageTitle(application?.name ?? t('applications.title'));
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showSecret, setShowSecret] = useState(false);
@@ -680,38 +683,30 @@ export function ApplicationDetailPage() {
         </div>
 
         {/* Integration Guide */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">{t('applications.detail.integrationGuide')}</h2>
-          
-          <div className="space-y-4">
+        <div className="bg-white rounded-gh border border-gh-border p-6">
+          <h2 className="text-xl font-semibold text-gh-fg mb-4">{t('applications.detail.integrationGuide')}</h2>
+
+          <div className="space-y-5">
             <div>
-              <h3 className="font-semibold text-gray-900 mb-2">1. {t('applications.detail.authUrl')}</h3>
-              <code className="block bg-gray-100 px-3 py-2 rounded text-sm overflow-x-auto">
-                {frontendBase}/authorize?response_type=code&client_id={application.app_id}&redirect_uri={encodeURIComponent(application.redirect_uris[0])}&scope={encodeURIComponent(scopeParam)}&state=RANDOM_STATE
-              </code>
+              <h3 className="font-semibold text-gh-fg mb-2">1. {t('applications.detail.authUrl')}</h3>
+              <CodeBlock
+                inline
+                code={`${frontendBase}/authorize?response_type=code&client_id=${application.app_id}&redirect_uri=${encodeURIComponent(application.redirect_uris[0])}&scope=${encodeURIComponent(scopeParam)}&state=RANDOM_STATE`}
+              />
             </div>
 
             <div>
-              <h3 className="font-semibold text-gray-900 mb-2">2. {t('applications.detail.tokenExchange')}</h3>
-              <pre className="bg-gray-100 px-3 py-2 rounded text-sm overflow-x-auto">
-{`curl -X POST ${backendBase}/oauth2/token \\
-  -H "Content-Type: application/json" \\
-  -d '{
-    "grant_type": "authorization_code",
-    "code": "AUTHORIZATION_CODE",
-    "redirect_uri": "${application.redirect_uris[0]}",
-    "client_id": "${application.app_id}",
-    "client_secret": "YOUR_CLIENT_SECRET"
-  }'`}
-              </pre>
+              <h3 className="font-semibold text-gh-fg mb-2">2. {t('applications.detail.tokenExchange')}</h3>
+              <CodeBlock
+                code={`curl -X POST ${backendBase}/oauth2/token \\\n  -H "Content-Type: application/json" \\\n  -d '{\n    "grant_type": "authorization_code",\n    "code": "AUTHORIZATION_CODE",\n    "redirect_uri": "${application.redirect_uris[0]}",\n    "client_id": "${application.app_id}",\n    "client_secret": "YOUR_CLIENT_SECRET"\n  }'`}
+              />
             </div>
 
             <div>
-              <h3 className="font-semibold text-gray-900 mb-2">3. {t('applications.detail.getUserInfo')}</h3>
-              <pre className="bg-gray-100 px-3 py-2 rounded text-sm overflow-x-auto">
-{`curl ${backendBase}/oauth2/userinfo \\
-  -H "Authorization: Bearer ACCESS_TOKEN"`}
-              </pre>
+              <h3 className="font-semibold text-gh-fg mb-2">3. {t('applications.detail.getUserInfo')}</h3>
+              <CodeBlock
+                code={`curl ${backendBase}/oauth2/userinfo \\\n  -H "Authorization: Bearer ACCESS_TOKEN"`}
+              />
             </div>
           </div>
         </div>

@@ -5,11 +5,13 @@ import { startAuthentication } from '@simplewebauthn/browser';
 import { api } from '../api/client';
 import { useAuth } from '../contexts/AuthContext';
 import { setPasskeyTrusted } from '../utils/passkey';
+import { usePageTitle } from '../utils/usePageTitle';
 
 type VerificationMethod = 'passkey' | 'totp';
 
 export function PasskeyVerificationPage() {
   const { t } = useTranslation();
+  usePageTitle(t('passkeyVerification.loginTitle'));
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { user, setSession, isAuthenticated } = useAuth();

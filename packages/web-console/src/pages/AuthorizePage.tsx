@@ -4,9 +4,11 @@ import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
 import { api } from '../api/client';
 import { isPasskeyTrusted } from '../utils/passkey';
+import { usePageTitle } from '../utils/usePageTitle';
 
 export function AuthorizePage() {
   const { t } = useTranslation();
+  usePageTitle(t('authorize.title'));
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { isAuthenticated, user } = useAuth();

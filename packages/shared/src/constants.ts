@@ -22,7 +22,7 @@ export const RESPONSE_TYPES = {
 
 // Token expiration times (in seconds)
 export const TOKEN_EXPIRATION = {
-  ACCESS_TOKEN: 3600, // 1 hour
+  ACCESS_TOKEN: 2592000, // 30 days
   REFRESH_TOKEN: 2592000, // 30 days
   AUTHORIZATION_CODE: 600, // 10 minutes
 } as const;
