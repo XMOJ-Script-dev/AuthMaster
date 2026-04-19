@@ -49,7 +49,7 @@ export class PasskeyService {
       rpName: 'AuthMaster',
       rpID: this.rpId,
       userName: user.email,
-      userID: new TextEncoder().encode(user.id) as unknown as Uint8Array<ArrayBuffer>,
+      userID: new TextEncoder().encode(user.id),
       challenge: generateRandomString(32),
       userDisplayName: user.email,
       attestationType: 'none',
@@ -113,7 +113,9 @@ export class PasskeyService {
       name: displayName,
       device_type: registrationInfo.credentialDeviceType,
       backed_up: registrationInfo.credentialBackedUp,
-      transports: [],
+      transports: Array.isArray(input.credential.response.transports)
+        ? input.credential.response.transports
+        : [],
     });
 
     return this.toPublic(stored);
@@ -210,17 +212,19 @@ export class PasskeyService {
       throw new Error('Passkey not found');
     }
 
+    const credential: WebAuthnCredential = {
+      id: stored.credential_id,
+      publicKey: base64urlToBytes(stored.public_key),
+      counter: stored.counter,
+      transports: this.parseTransports(stored.transports),
+    };
+
     const verification = await verifyAuthenticationResponse({
       response: input.credential,
       expectedChallenge: challenge.challenge,
       expectedOrigin: this.origin,
       expectedRPID: this.rpId,
-      credential: {
-        id: stored.credential_id,
-        publicKey: base64urlToBytes(stored.public_key),
-        counter: stored.counter,
-        transports: this.parseTransports(stored.transports),
-      } as WebAuthnCredential,
+      credential,
       requireUserVerification: false,
     });
 
