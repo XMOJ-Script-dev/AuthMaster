@@ -77,12 +77,7 @@ export function LoginPage() {
     setPasskeyLoading(true);
 
     try {
-      const candidateEmail = email.trim() || getLastPasskeyEmail();
-      if (!candidateEmail) {
-        setError(t('auth.login.passkeyEmailRequired'));
-        return;
-      }
-
+      const candidateEmail = email.trim() || getLastPasskeyEmail() || undefined;
       const options = await api.beginPasskeyLogin(candidateEmail);
       const credential = await startAuthentication({ optionsJSON: options.options as any });
       const result = await api.completePasskeyLogin({

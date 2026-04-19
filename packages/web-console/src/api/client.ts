@@ -322,10 +322,11 @@ class ApiClient {
     });
   }
 
-  async beginPasskeyLogin(email: string) {
+  async beginPasskeyLogin(email?: string) {
+    const normalizedEmail = email?.trim();
     return this.request<PasskeyOptionsResponse>('/api/v1/auth/passkey/login-options', {
       method: 'POST',
-      body: JSON.stringify({ email }),
+      body: JSON.stringify(normalizedEmail ? { email: normalizedEmail } : {}),
     });
   }
 

@@ -305,6 +305,31 @@ export class Database {
     };
   }
 
+  async getAnyPasskeyCredential(): Promise<PasskeyCredential | null> {
+    const result = await this.db
+      .prepare('SELECT * FROM passkey_credentials ORDER BY updated_at DESC LIMIT 1')
+      .first<any>();
+
+    if (!result) {
+      return null;
+    }
+
+    return {
+      id: result.id,
+      user_id: result.user_id,
+      credential_id: result.credential_id,
+      public_key: result.public_key,
+      counter: Number(result.counter || 0),
+      name: result.name,
+      device_type: result.device_type,
+      backed_up: !!result.backed_up,
+      transports: result.transports || undefined,
+      last_used_at: result.last_used_at || undefined,
+      created_at: result.created_at,
+      updated_at: result.updated_at,
+    };
+  }
+
   async getPasskeyById(id: string): Promise<PasskeyCredential | null> {
     const result = await this.db
       .prepare('SELECT * FROM passkey_credentials WHERE id = ?')

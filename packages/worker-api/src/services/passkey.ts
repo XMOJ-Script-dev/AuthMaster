@@ -142,30 +142,47 @@ export class PasskeyService {
     await this.db.deletePasskeyCredential(passkeyId);
   }
 
-  async beginAuthentication(email: string): Promise<PasskeyOptionsResponse> {
-    const user = await this.db.getUserByEmail(email);
-    if (!user) {
-      throw new Error('User not found');
-    }
+  async beginAuthentication(email?: string): Promise<PasskeyOptionsResponse> {
+    const normalizedEmail = email?.trim();
+    let challengeOwnerUserId: string;
+    let allowCredentials: { id: string; transports: AuthenticatorTransportFuture[] }[] | undefined;
 
-    const credentials = await this.db.getPasskeyCredentialsForUser(user.id);
-    if (credentials.length === 0) {
-      throw new Error('No passkeys registered for this account');
+    if (normalizedEmail) {
+      const user = await this.db.getUserByEmail(normalizedEmail);
+      if (!user) {
+        throw new Error('User not found');
+      }
+
+      const credentials = await this.db.getPasskeyCredentialsForUser(user.id);
+      if (credentials.length === 0) {
+        throw new Error('No passkeys registered for this account');
+      }
+
+      challengeOwnerUserId = user.id;
+      allowCredentials = credentials.map(passkey => ({
+        id: passkey.credential_id,
+        transports: this.parseTransports(passkey.transports),
+      }));
+    } else {
+      const anyCredential = await this.db.getAnyPasskeyCredential();
+      if (!anyCredential) {
+        throw new Error('No passkeys registered');
+      }
+
+      challengeOwnerUserId = anyCredential.user_id;
+      allowCredentials = undefined;
     }
 
     const options = await generateAuthenticationOptions({
       rpID: this.rpId,
-      allowCredentials: credentials.map(passkey => ({
-        id: passkey.credential_id,
-        transports: this.parseTransports(passkey.transports),
-      })),
+      allowCredentials,
       userVerification: 'preferred',
       challenge: generateRandomString(32),
     });
 
-    await this.db.deletePasskeyChallenge(user.id, PASSKEY_PURPOSE_AUTHENTICATION);
+    await this.db.deletePasskeyChallenge(challengeOwnerUserId, PASSKEY_PURPOSE_AUTHENTICATION);
     const challenge = await this.db.createPasskeyChallenge({
-      user_id: user.id,
+      user_id: challengeOwnerUserId,
       purpose: PASSKEY_PURPOSE_AUTHENTICATION,
       challenge: options.challenge,
       expires_at: new Date(Date.now() + 5 * 60 * 1000).toISOString(),

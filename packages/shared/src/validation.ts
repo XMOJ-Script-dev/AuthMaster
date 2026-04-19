@@ -37,7 +37,7 @@ export const passkeyUpdateSchema = z.object({
 });
 
 export const passkeyLoginStartSchema = z.object({
-  email: z.string().email(),
+  email: z.string().email().optional(),
 });
 
 export const totpEnableSchema = z.object({

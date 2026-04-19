@@ -78,11 +78,7 @@ export function PasskeyVerificationPage() {
     setLoading(true);
 
     try {
-      const verifyEmail = email || user?.email;
-      if (!verifyEmail) {
-        throw new Error(t('passkeyVerification.emailRequired'));
-      }
-
+      const verifyEmail = (email || user?.email || '').trim() || undefined;
       const options = await api.beginPasskeyLogin(verifyEmail);
       const credential = await startAuthentication({ optionsJSON: options.options as any });
       const result = await api.completePasskeyLogin({
